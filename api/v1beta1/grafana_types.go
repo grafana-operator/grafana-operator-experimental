@@ -56,40 +56,45 @@ type OperatorReconcileVars struct {
 
 // GrafanaSpec defines the desired state of Grafana
 type GrafanaSpec struct {
-	Config             GrafanaConfig            `json:"config"`
-	Containers         []v1.Container           `json:"containers,omitempty"`
-	Ingress            *GrafanaIngress          `json:"ingress,omitempty"`
-	InitResources      *v1.ResourceRequirements `json:"initResources,omitempty"`
-	Secrets            []string                 `json:"secrets,omitempty"`
-	ConfigMaps         []string                 `json:"configMaps,omitempty"`
-	Service            *GrafanaService          `json:"service,omitempty"`
-	Deployment         *GrafanaDeployment       `json:"deployment,omitempty"`
-	Resources          *v1.ResourceRequirements `json:"resources,omitempty"`
-	ServiceAccount     *GrafanaServiceAccount   `json:"serviceAccount,omitempty"`
-	Client             *GrafanaClient           `json:"client,omitempty"`
-	DataStorage        *GrafanaDataStorage      `json:"dataStorage,omitempty"`
-	Jsonnet            *JsonnetConfig           `json:"jsonnet,omitempty"`
-	BaseImage          string                   `json:"baseImage,omitempty"`
-	InitImage          string                   `json:"initImage,omitempty"`
-	LivenessProbeSpec  *LivenessProbeSpec       `json:"livenessProbeSpec,omitempty"`
-	ReadinessProbeSpec *ReadinessProbeSpec      `json:"readinessProbeSpec,omitempty"`
+	Config           GrafanaConfig            `json:"config"`
+	Containers       []v1.Container           `json:"containers,omitempty"`
+	Ingress          *GrafanaIngress          `json:"ingress,omitempty"`
+	InitResources    *v1.ResourceRequirements `json:"initResources,omitempty"`
+	Secrets          []string                 `json:"secrets,omitempty"`
+	ConfigMaps       []string                 `json:"configMaps,omitempty"`
+	Service          *GrafanaService          `json:"service,omitempty"`
+	Deployment       *GrafanaDeployment       `json:"deployment,omitempty"`
+	Resources        *v1.ResourceRequirements `json:"resources,omitempty"`
+	ServiceAccount   *GrafanaServiceAccount   `json:"serviceAccount,omitempty"`
+	Client           *GrafanaClient           `json:"client,omitempty"`
+	DataStorage      *GrafanaDataStorage      `json:"dataStorage,omitempty"`
+	Jsonnet          *JsonnetConfig           `json:"jsonnet,omitempty"`
+	InitImage        string                   `json:"initImage,omitempty"`
+	GrafanaContainer *GrafanaContainer        `json:"grafanaContainer,omitempty"`
 }
 
-type ReadinessProbeSpec struct {
-	InitialDelaySeconds *int32       `json:"initialDelaySeconds,omitempty"`
-	TimeOutSeconds      *int32       `json:"timeoutSeconds,omitempty"`
-	PeriodSeconds       *int32       `json:"periodSeconds,omitempty"`
-	SuccessThreshold    *int32       `json:"successThreshold,omitempty"`
-	FailureThreshold    *int32       `json:"failureThreshold,omitempty"`
-	Scheme              v1.URIScheme `json:"scheme,omitempty"`
-}
-type LivenessProbeSpec struct {
-	InitialDelaySeconds *int32       `json:"initialDelaySeconds,omitempty"`
-	TimeOutSeconds      *int32       `json:"timeoutSeconds,omitempty"`
-	PeriodSeconds       *int32       `json:"periodSeconds,omitempty"`
-	SuccessThreshold    *int32       `json:"successThreshold,omitempty"`
-	FailureThreshold    *int32       `json:"failureThreshold,omitempty"`
-	Scheme              v1.URIScheme `json:"scheme,omitempty"`
+type GrafanaContainer struct {
+	Image                    string                      `json:"image,omitempty"`
+	Command                  []string                    `json:"command,omitempty"`
+	Args                     []string                    `json:"args,omitempty"`
+	WorkingDir               string                      `json:"workingDir,omitempty"`
+	Ports                    []v1.ContainerPort          `json:"ports,omitempty"`
+	EnvFrom                  []v1.EnvFromSource          `json:"envFrom,omitempty"`
+	Env                      []v1.EnvVar                 `json:"env,omitempty"`
+	Resources                v1.ResourceRequirements     `json:"resources,omitempty"`
+	VolumeMounts             []v1.VolumeMount            `json:"volumeMounts,omitempty"`
+	VolumeDevices            []v1.VolumeDevice           `json:"volumeDevices,omitempty"`
+	LivenessProbe            *v1.Probe                   `json:"livenessProbe,omitempty"`
+	ReadinessProbe           *v1.Probe                   `json:"readinessProbe,omitempty"`
+	StartupProbe             *v1.Probe                   `json:"startupProbe,omitempty"`
+	Lifecycle                *v1.Lifecycle               `json:"lifecycle,omitempty"`
+	TerminationMessagePath   string                      `json:"terminationMessagePath,omitempty"`
+	TerminationMessagePolicy v1.TerminationMessagePolicy `json:"terminationMessagePolicy,omitempty"`
+	ImagePullPolicy          v1.PullPolicy               `json:"imagePullPolicy,omitempty"`
+	SecurityContext          *v1.SecurityContext         `json:"securityContext,omitempty"`
+	Stdin                    bool                        `json:"stdin,omitempty"`
+	StdinOnce                bool                        `json:"stdinOnce,omitempty"`
+	TTY                      bool                        `json:"tty,omitempty"`
 }
 
 type JsonnetConfig struct {

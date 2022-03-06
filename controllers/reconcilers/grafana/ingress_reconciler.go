@@ -3,9 +3,10 @@ package grafana
 import (
 	"context"
 	"fmt"
-	"github.com/grafana-operator/grafana-operator-experimental/api/v1beta1"
-	"github.com/grafana-operator/grafana-operator-experimental/controllers/model"
-	"github.com/grafana-operator/grafana-operator-experimental/controllers/reconcilers"
+
+	"github.com/nissessenap/grafana-operator-experimental/api/v1beta1"
+	"github.com/nissessenap/grafana-operator-experimental/controllers/model"
+	"github.com/nissessenap/grafana-operator-experimental/controllers/reconcilers"
 	routev1 "github.com/openshift/api/route/v1"
 	v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"

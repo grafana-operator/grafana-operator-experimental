@@ -3,10 +3,12 @@ package grafana
 import (
 	"context"
 	"fmt"
-	"github.com/grafana-operator/grafana-operator-experimental/api/v1beta1"
-	config2 "github.com/grafana-operator/grafana-operator-experimental/controllers/config"
-	"github.com/grafana-operator/grafana-operator-experimental/controllers/model"
-	"github.com/grafana-operator/grafana-operator-experimental/controllers/reconcilers"
+
+	"github.com/banzaicloud/operator-tools/pkg/merge"
+	"github.com/nissessenap/grafana-operator-experimental/api/v1beta1"
+	config2 "github.com/nissessenap/grafana-operator-experimental/controllers/config"
+	"github.com/nissessenap/grafana-operator-experimental/controllers/model"
+	"github.com/nissessenap/grafana-operator-experimental/controllers/reconcilers"
 	v12 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -19,14 +21,15 @@ import (
 )
 
 const (
-	InitMemoryRequest = "128Mi"
-	InitCpuRequest    = "250m"
-	InitMemoryLimit   = "512Mi"
-	InitCpuLimit      = "1000m"
-	MemoryRequest     = "256Mi"
-	CpuRequest        = "100m"
-	MemoryLimit       = "1024Mi"
-	CpuLimit          = "500m"
+	InitMemoryRequest    = "128Mi"
+	InitCpuRequest       = "250m"
+	InitMemoryLimit      = "512Mi"
+	InitCpuLimit         = "1000m"
+	MemoryRequest        = "256Mi"
+	CpuRequest           = "100m"
+	MemoryLimit          = "1024Mi"
+	CpuLimit             = "500m"
+	GrafanaContainerName = "grafana"
 )
 
 type DeploymentReconciler struct {
@@ -320,12 +323,13 @@ func getContainers(cr *v1beta1.Grafana, scheme *runtime.Scheme, vars *v1beta1.Op
 	var containers []v1.Container // nolint
 	var image string
 
-	if cr.Spec.BaseImage != "" {
-		image = cr.Spec.BaseImage
+	if cr.Spec.GrafanaContainer.Image != "" {
+		image = cr.Spec.GrafanaContainer.Image
 	} else {
 		image = fmt.Sprintf("%s:%s", config2.GrafanaImage, config2.GrafanaVersion)
 	}
 
+<<<<<<< HEAD
 	plugins := model.GetPluginsConfigMap(cr, scheme)
 
 	// env var to restart containers if plugins change
@@ -352,6 +356,10 @@ func getContainers(cr *v1beta1.Grafana, scheme *runtime.Scheme, vars *v1beta1.Op
 
 	containers = append(containers, v1.Container{
 		Name:       "grafana",
+=======
+	grafanContainer := &v1.Container{
+		Name:       GrafanaContainerName,
+>>>>>>> grafana_crd
 		Image:      image,
 		Args:       []string{"-config=/etc/grafana/grafana.ini"},
 		WorkingDir: "",
@@ -369,7 +377,24 @@ func getContainers(cr *v1beta1.Grafana, scheme *runtime.Scheme, vars *v1beta1.Op
 		TerminationMessagePolicy: "File",
 		ImagePullPolicy:          "IfNotPresent",
 		SecurityContext:          getContainerSecurityContext(cr),
-	})
+	}
+
+	fmt.Printf("This is grafanaContainer %v", grafanContainer)
+	//TODO understand how the merge works in detail.
+	if cr.Spec.GrafanaContainer != nil {
+		err := merge.Merge(&grafanContainer, cr.Spec.GrafanaContainer)
+		if err != nil {
+			fmt.Printf("Merge grafanaContainer %v", err)
+			fmt.Println("\n nooooo")
+			return nil
+		}
+	}
+
+	grafanContainer2 = v1.Container{
+		//Måste wrappa upp container objectet och stoppa in i container.
+		//Detta är säkert vad merge gör
+	}
+	containers = append(containers, grafanContainer2)
 
 	// Use auto generated admin account?
 	if !cr.SkipCreateAdminAccount() {

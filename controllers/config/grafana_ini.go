@@ -3,7 +3,7 @@ package config
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/grafana-operator/grafana-operator-experimental/api/v1beta1"
+	"github.com/nissessenap/grafana-operator-experimental/api/v1beta1"
 	"io"
 	"sort"
 	"strconv"

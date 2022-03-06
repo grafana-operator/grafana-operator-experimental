@@ -18,8 +18,9 @@ package main
 
 import (
 	"flag"
-	discovery2 "k8s.io/client-go/discovery"
 	"os"
+
+	discovery2 "k8s.io/client-go/discovery"
 
 	routev1 "github.com/openshift/api/route/v1"
 
@@ -34,8 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	grafanav1beta1 "github.com/grafana-operator/grafana-operator-experimental/api/v1beta1"
-	"github.com/grafana-operator/grafana-operator-experimental/controllers"
+	grafanav1beta1 "github.com/nissessenap/grafana-operator-experimental/api/v1beta1"
+	"github.com/nissessenap/grafana-operator-experimental/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

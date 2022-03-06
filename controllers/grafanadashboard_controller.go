@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/grafana-operator/grafana-operator-experimental/controllers/model"
+	"github.com/nissessenap/grafana-operator-experimental/controllers/model"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	grafanav1beta1 "github.com/grafana-operator/grafana-operator-experimental/api/v1beta1"
+	grafanav1beta1 "github.com/nissessenap/grafana-operator-experimental/api/v1beta1"
 )
 
 // GrafanaDashboardReconciler reconciles a GrafanaDashboard object
