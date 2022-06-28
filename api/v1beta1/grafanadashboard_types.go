@@ -17,6 +17,9 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
+	"encoding/json"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,6 +31,15 @@ type GrafanaDashboardSpec struct {
 	// dashboard json
 	Json string `json:"json,omitempty"`
 
+	// dashboard remote url
+	URL string `json:"url,omitempty"`
+
+	// grafana.com dashboard id
+	GrafanaCom *GrafanaComDashboardSpec `json:"grafanaCom,omitempty"`
+
+	// dashboard folder
+	Folder *GrafanaDashboardFolderSpec `json:"folder,omitempty"`
+
 	// selects Grafanas for import
 	InstanceSelector *metav1.LabelSelector `json:"instanceSelector,omitempty"`
 
@@ -35,8 +47,18 @@ type GrafanaDashboardSpec struct {
 	Plugins PluginList `json:"plugins,omitempty"`
 }
 
+type GrafanaComDashboardSpec struct{}
+
+type GrafanaDashboardFolderSpec struct {
+	Name string
+	UID  string
+}
+
 // GrafanaDashboardStatus defines the observed state of GrafanaDashboard
 type GrafanaDashboardStatus struct {
+	GrafanaVersion int64
+	GrafanaUID     string
+	FolderId       int64
 }
 
 //+kubebuilder:object:root=true
@@ -62,4 +84,27 @@ type GrafanaDashboardList struct {
 
 func init() {
 	SchemeBuilder.Register(&GrafanaDashboard{}, &GrafanaDashboardList{})
+}
+
+func (r *GrafanaDashboard) GetContent(ctx context.Context) (map[string]interface{}, error) {
+	if r.Spec.Json != "" {
+		var res map[string]interface{}
+		err := json.Unmarshal([]byte(r.Spec.Json), &res)
+		return res, err
+	} else if r.Spec.URL != "" {
+		return getRemoteDashboard(ctx, r.Spec.URL)
+	} else if r.Spec.GrafanaCom != nil {
+		return getGrafanaComDashboard(ctx, r.Spec.GrafanaCom)
+	}
+
+	return nil, nil
+}
+
+func getGrafanaComDashboard(ctx context.Context, spec *string) (map[string]interface{}, error) {
+	url := "https://grafana.com/" + *spec
+	return getRemoteDashboard(ctx, url)
+}
+
+func getRemoteDashboard(ctx context.Context, url string) (map[string]interface{}, error) {
+	return nil, nil
 }

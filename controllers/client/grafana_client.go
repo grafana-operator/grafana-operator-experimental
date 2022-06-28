@@ -5,12 +5,16 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
+	"net/url"
+	"time"
+
 	"github.com/grafana-operator/grafana-operator-experimental/api/v1beta1"
 	"github.com/grafana-operator/grafana-operator-experimental/controllers/config"
 	"github.com/grafana-operator/grafana-operator-experimental/controllers/model"
-	"net/http"
+	gapi "github.com/grafana/grafana-api-golang-client"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type GrafanaRequest struct {
@@ -35,15 +39,13 @@ type GrafanaResponse struct {
 
 type GrafanaClient interface {
 	CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDashboard) error
+	CreateFolderIfNotExists(dashboard *v1beta1.GrafanaDashboard) error
 }
 
-type GrafanaClientImpl struct {
-	kubeClient client.Client
-	httpClient *http.Client
-	username   string
-	password   string
-	url        string
-	ctx        context.Context
+type grafanaClientImpl struct {
+	ctx           context.Context
+	grafanaClient *gapi.Client
+	kubeClient    client.Client
 }
 
 func NewGrafanaClient(ctx context.Context, c client.Client, grafana *v1beta1.Grafana) (GrafanaClient, error) {
@@ -53,14 +55,14 @@ func NewGrafanaClient(ctx context.Context, c client.Client, grafana *v1beta1.Gra
 		},
 	}
 
-	var timeoutSeconds time.Duration
+	var timeoutDuration time.Duration
 	if grafana.Spec.Client != nil && grafana.Spec.Client.TimeoutSeconds != nil {
-		timeoutSeconds = time.Duration(*grafana.Spec.Client.TimeoutSeconds)
-		if timeoutSeconds < 0 {
-			timeoutSeconds = 0
+		timeoutDuration = time.Duration(*grafana.Spec.Client.TimeoutSeconds)
+		if timeoutDuration < 0 {
+			timeoutDuration = 0
 		}
 	} else {
-		timeoutSeconds = 10
+		timeoutDuration = 10
 	}
 
 	credentialSecret := model.GetGrafanaAdminSecret(grafana, nil)
@@ -88,18 +90,67 @@ func NewGrafanaClient(ctx context.Context, c client.Client, grafana *v1beta1.Gra
 		return nil, errors.New("grafana admin secret does not contain password")
 	}
 
-	return &GrafanaClientImpl{
-		url:        grafana.Status.AdminUrl,
-		username:   username,
-		password:   password,
-		kubeClient: c,
-		httpClient: &http.Client{
+	grafanaClient, err := gapi.New(grafana.Status.AdminUrl, gapi.Config{
+		BasicAuth: url.UserPassword(username, password),
+		Client: &http.Client{
 			Transport: transport,
-			Timeout:   time.Second * timeoutSeconds,
+			Timeout:   time.Second * timeoutDuration,
 		},
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup grafana client: %w", err)
+	}
+
+	return &grafanaClientImpl{
+		grafanaClient: grafanaClient,
+		kubeClient:    c,
+		ctx:           ctx,
 	}, nil
 }
 
-func (r *GrafanaClientImpl) CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDashboard) error {
+func (r *grafanaClientImpl) CreateFolderIfNotExists(dashboard *v1beta1.GrafanaDashboard) error {
+	folder, err := r.grafanaClient.NewFolder(dashboard.Spec.Folder.Name, dashboard.Spec.Folder.UID)
+	if err != nil {
+		return err
+	}
+
+	dashboard.Status.FolderId = folder.ID
+	err = r.kubeClient.Status().Update(r.ctx, dashboard)
+	if err != nil {
+		// TODO: perhaps blow up more spectacularly when this happens?
+		return err
+	}
+
+	return nil
+}
+
+func (r *grafanaClientImpl) CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDashboard) error {
+	model, err := dashboard.GetContent(r.ctx)
+	if err != nil {
+		// TODO: error reporting
+		return err
+	}
+
+	res, err := r.grafanaClient.NewDashboard(gapi.Dashboard{
+		Overwrite: true,
+		Model:     model,
+		Folder:    dashboard.Status.FolderId,
+		Message:   "Updated by Grafana Operator. ResourceVersion: " + dashboard.ResourceVersion,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	dashboard.Status.GrafanaUID = res.UID
+	dashboard.Status.GrafanaVersion = res.Version
+
+	err = r.kubeClient.Status().Update(r.ctx, dashboard)
+	if err != nil {
+		// TODO: perhaps blow up more spectacularly when this happens?
+		return err
+	}
+
 	return nil
 }
