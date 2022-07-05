@@ -118,13 +118,35 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 
-CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
-controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0)
+controller-gen:
+ifeq (, $(shell which controller-gen))
+		@{ \
+		set -e ;\
+		CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
+		cd $$CONTROLLER_GEN_TMP_DIR ;\
+		go mod init tmp ;\
+		go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2 ;\
+		rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
+		}
+CONTROLLER_GEN=$(GOBIN)/controller-gen
+else
+CONTROLLER_GEN=$(shell which controller-gen)
+endif
 
-KUSTOMIZE = $(shell pwd)/bin/kustomize
-kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+kustomize:
+ifeq (, $(shell which kustomize))
+		@{ \
+		set -e ;\
+		KUSTOMIZE_TMP_DIR=$$(mktemp -d) ;\
+		cd $$KUSTOMIZE_TMP_DIR ;\
+		go mod init tmp ;\
+		go install sigs.k8s.io/kustomize/kustomize/v3@v3.8.7 ;\
+		rm -rf $$KUSTOMIZE_TMP_DIR ;\
+		}
+KUSTOMIZE=$(GOBIN)/kustomize
+else
+KUSTOMIZE=$(shell which kustomize)
+endif
 
 ENVTEST = $(shell pwd)/bin/setup-envtest
 envtest: ## Download envtest-setup locally if necessary.
