@@ -9,7 +9,10 @@ spec:
   client:
     preferIngress: true
   config:
+    security:
+      admin_user: root
+      admin_password: start
     log:
       mode: "console"
     auth:
-      disable_login_form: False
+      disable_login_form: "false"
