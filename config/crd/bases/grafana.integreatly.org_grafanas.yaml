@@ -4906,6 +4906,18 @@ spec:
                 type: string
               lastMessage:
                 type: string
+              plugins:
+                items:
+                  properties:
+                    name:
+                      type: string
+                    version:
+                      type: string
+                  required:
+                  - name
+                  - version
+                  type: object
+                type: array
               stage:
                 type: string
               stageStatus:

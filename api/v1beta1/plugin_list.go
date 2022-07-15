@@ -3,9 +3,10 @@ package v1beta1
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/blang/semver"
 	"io"
 	"strings"
+
+	"github.com/blang/semver"
 )
 
 type GrafanaPlugin struct {
@@ -124,4 +125,35 @@ func (l PluginList) VersionsOf(plugin *GrafanaPlugin) int {
 		}
 	}
 	return i
+}
+
+func (l PluginList) ConsolidatedConcat(others PluginList) (PluginList, error) {
+	var consolidatedPlugins PluginList
+
+	for _, plugin := range others {
+		// new plugin
+		if !consolidatedPlugins.HasSomeVersionOf(&plugin) {
+			consolidatedPlugins = append(consolidatedPlugins, plugin)
+			continue
+		}
+
+		// newer version of plugin already installed
+		hasNewer, err := consolidatedPlugins.HasNewerVersionOf(&plugin)
+		if err != nil {
+			return nil, err
+		}
+
+		if hasNewer {
+			continue
+		}
+
+		// duplicate plugin
+		if consolidatedPlugins.HasExactVersionOf(&plugin) {
+			continue
+		}
+
+		// some version is installed, but it is not newer and it is not the same: must be older
+		consolidatedPlugins.Update(&plugin)
+	}
+	return consolidatedPlugins, nil
 }

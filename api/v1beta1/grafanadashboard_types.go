@@ -47,18 +47,21 @@ type GrafanaDashboardSpec struct {
 	Plugins PluginList `json:"plugins,omitempty"`
 }
 
-type GrafanaComDashboardSpec struct{}
+type GrafanaComDashboardSpec struct {
+	Id       string `json:"id"`
+	Revision uint64 `json:"revision,omitempty"`
+}
 
 type GrafanaDashboardFolderSpec struct {
-	Name string
-	UID  string
+	Name string `json:"name,omitempty"`
+	UID  string `json:"uid,omitempty"`
 }
 
 // GrafanaDashboardStatus defines the observed state of GrafanaDashboard
 type GrafanaDashboardStatus struct {
-	GrafanaVersion int64
-	GrafanaUID     string
-	FolderId       int64
+	GrafanaVersion int64  `json:"grafanaVersion,omitempty"`
+	GrafanaUID     string `json:"grafanaUID,omitempty"`
+	FolderId       int64  `json:"folderId,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -94,14 +97,15 @@ func (r *GrafanaDashboard) GetContent(ctx context.Context) (map[string]interface
 	} else if r.Spec.URL != "" {
 		return getRemoteDashboard(ctx, r.Spec.URL)
 	} else if r.Spec.GrafanaCom != nil {
-		return getGrafanaComDashboard(ctx, r.Spec.GrafanaCom)
+		return getGrafanaComDashboard(ctx, r.Spec.GrafanaCom.Id)
 	}
 
 	return nil, nil
 }
 
-func getGrafanaComDashboard(ctx context.Context, spec *string) (map[string]interface{}, error) {
-	url := "https://grafana.com/" + *spec
+func getGrafanaComDashboard(ctx context.Context, id string) (map[string]interface{}, error) {
+	// TODO: proper URL for grafana com
+	url := "https://grafana.com/" + id
 	return getRemoteDashboard(ctx, url)
 }
 

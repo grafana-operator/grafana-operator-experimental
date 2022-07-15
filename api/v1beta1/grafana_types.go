@@ -632,6 +632,7 @@ type GrafanaStatus struct {
 	StageStatus OperatorStageStatus `json:"stageStatus,omitempty"`
 	LastMessage string              `json:"lastMessage,omitempty"`
 	AdminUrl    string              `json:"adminUrl,omitempty"`
+	Plugins     PluginList          `json:"plugins,omitempty"`
 }
 
 //+kubebuilder:object:root=true

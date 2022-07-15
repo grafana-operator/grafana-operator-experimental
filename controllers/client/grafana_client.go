@@ -40,6 +40,7 @@ type GrafanaResponse struct {
 type GrafanaClient interface {
 	CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDashboard) error
 	CreateFolderIfNotExists(dashboard *v1beta1.GrafanaDashboard) error
+	DeleteDashboard(dashboard *v1beta1.GrafanaDashboard) error
 }
 
 type grafanaClientImpl struct {
@@ -132,6 +133,19 @@ func (r *grafanaClientImpl) CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDa
 		return err
 	}
 
+	if dashboard.Status.GrafanaUID != "" && dashboard.Status.GrafanaVersion != 0 {
+		existing, err := r.grafanaClient.DashboardByUID(dashboard.Status.GrafanaUID)
+		if err != nil {
+			// TODO: does a 404 trigger this?
+			return err
+		}
+		if dashboard.Status.GrafanaVersion == existing.Model["version"] {
+			// TODO: is this optimization possible?
+			// return nil
+		}
+
+	}
+
 	res, err := r.grafanaClient.NewDashboard(gapi.Dashboard{
 		Overwrite: true,
 		Model:     model,
@@ -145,12 +159,14 @@ func (r *grafanaClientImpl) CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDa
 
 	dashboard.Status.GrafanaUID = res.UID
 	dashboard.Status.GrafanaVersion = res.Version
-
-	err = r.kubeClient.Status().Update(r.ctx, dashboard)
-	if err != nil {
+	if err = r.kubeClient.Status().Update(r.ctx, dashboard); err != nil {
 		// TODO: perhaps blow up more spectacularly when this happens?
 		return err
 	}
 
 	return nil
+}
+
+func (r *grafanaClientImpl) DeleteDashboard(dashboard *v1beta1.GrafanaDashboard) error {
+	return r.grafanaClient.DeleteDashboardByUID(dashboard.Status.GrafanaUID)
 }

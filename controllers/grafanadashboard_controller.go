@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	client2 "github.com/grafana-operator/grafana-operator-experimental/controllers/client"
@@ -27,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	grafanav1beta1 "github.com/grafana-operator/grafana-operator-experimental/api/v1beta1"
@@ -52,7 +54,7 @@ type GrafanaDashboardReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	controllerLog := log.FromContext(ctx)
+	controllerLog := log.FromContext(ctx).WithValues("dashboard", req.Name, "namespace", req.Namespace)
 
 	dashboard := &grafanav1beta1.GrafanaDashboard{}
 	err := r.Get(ctx, req.NamespacedName, dashboard)
@@ -78,10 +80,52 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	if len(instances.Items) == 0 {
-		controllerLog.Info("no matching instances found for dashboard", "dashboard", dashboard.Name, "namespace", dashboard.Namespace)
+		controllerLog.Info("no matching instances found for dashboard")
 	}
 
 	controllerLog.Info("found matching Grafana instances", "count", len(instances.Items))
+
+	finalizers := []string{}
+	for _, grafana := range instances.Items {
+		finalizer := fmt.Sprintf("grafana.integreatly.org/instance/%s/%s", grafana.Namespace, grafana.Name)
+		finalizers = append(finalizers, finalizer)
+	}
+
+	if dashboard.ObjectMeta.DeletionTimestamp.IsZero() {
+		anythingAdded := false
+		for _, finalizer := range finalizers {
+			if !controllerutil.ContainsFinalizer(dashboard, finalizer) {
+				anythingAdded = true
+				controllerutil.AddFinalizer(dashboard, finalizer)
+			}
+		}
+		if anythingAdded {
+			if err := r.Update(ctx, dashboard); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	} else {
+		anythingRemoved := false
+		for i, finalizer := range finalizers {
+			if controllerutil.ContainsFinalizer(dashboard, finalizer) {
+				if err := r.handleFinalizerForInstance(ctx, &instances.Items[i], dashboard); err != nil {
+					// if fail to delete the external dependency here, return with error
+					// so that it can be retried
+					return ctrl.Result{}, err
+				}
+
+				controllerutil.RemoveFinalizer(dashboard, finalizer)
+			}
+
+		}
+		if anythingRemoved {
+			if err := r.Update(ctx, dashboard); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		// Stop reconciliation as the item is being deleted
+		return ctrl.Result{}, nil
+	}
 
 	complete := true
 
@@ -89,40 +133,33 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		// an admin url is required to interact with grafana
 		// the instance or route might not yet be ready
 		if grafana.Status.AdminUrl == "" {
-			controllerLog.Info("grafana instance not ready", "grafana", grafana.Name)
+			controllerLog.Info("grafana instance not ready", "grafana", grafana.Name, "grafanaNamespace", grafana.Namespace)
 			complete = false
-			continue
-		}
-
-		c, err := client2.NewGrafanaClient(ctx, r.Client, &grafana)
-		if err != nil {
-			complete = false
-			controllerLog.Error(err, "error setting up grafana client", "dashboard", dashboard.Name, "grafana", grafana.Name)
 			continue
 		}
 
 		// first reconcile the plugins
 		// append the requested dashboards to a configmap from where the
 		// grafana reconciler will pick them up
-		err = r.reconcilePlugins(c, dashboard)
+		err = r.reconcilePlugins(ctx, &grafana, dashboard)
 		if err != nil {
 			complete = false
-			controllerLog.Error(err, "error reconciling plugins", "dashboard", dashboard.Name, "grafana", grafana.Name)
+			controllerLog.Error(err, "error reconciling plugins", "grafana", grafana.Name, "grafanaNamespace", grafana.Namespace)
 			continue
 		}
 
 		// then import the dashboard into the matching grafana instances
-		err = r.reconcileFolder(c, dashboard)
+		err = r.reconcileFolder(ctx, &grafana, dashboard)
 		if err != nil {
 			complete = false
-			controllerLog.Error(err, "error reconciling folder", "dashboard", dashboard.Name, "grafana", grafana.Name)
+			controllerLog.Error(err, "error reconciling folder", "grafana", grafana.Name, "grafanaNamespace", grafana.Namespace)
 			continue
 		}
 		// then import the dashboard into the matching grafana instances
-		err = r.reconcileDashboard(c, dashboard)
+		err = r.reconcileDashboard(ctx, &grafana, dashboard)
 		if err != nil {
 			complete = false
-			controllerLog.Error(err, "error reconciling dashboard", "dashboard", dashboard.Name, "grafana", grafana.Name)
+			controllerLog.Error(err, "error reconciling dashboard", "grafana", grafana.Name, "grafanaNamespace", grafana.Namespace)
 			continue
 		}
 	}
@@ -135,20 +172,56 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	return ctrl.Result{RequeueAfter: RequeueDelayError}, nil
 }
 
-func (r *GrafanaDashboardReconciler) reconcileDashboard(c client2.GrafanaClient, dashboard *grafanav1beta1.GrafanaDashboard) error {
+func (r *GrafanaDashboardReconciler) reconcileDashboard(ctx context.Context, grafana *grafanav1beta1.Grafana, dashboard *grafanav1beta1.GrafanaDashboard) error {
+	c, err := r.getGrafanaClient(ctx, grafana, dashboard)
+	if err != nil {
+		return err
+	}
+
 	if strings.TrimSpace(dashboard.Spec.Json) == "" && dashboard.Spec.URL == "" && dashboard.Spec.GrafanaCom == nil {
 		return nil
 	}
 
 	return c.CreateOrUpdateDashboard(dashboard)
 }
-func (r *GrafanaDashboardReconciler) reconcileFolder(c client2.GrafanaClient, dashboard *grafanav1beta1.GrafanaDashboard) error {
+
+func (r *GrafanaDashboardReconciler) handleFinalizerForInstance(ctx context.Context, grafana *grafanav1beta1.Grafana, dashboard *grafanav1beta1.GrafanaDashboard) error {
+	c, err := r.getGrafanaClient(ctx, grafana, dashboard)
+	if err != nil {
+		return err
+	}
+	return c.DeleteDashboard(dashboard)
+}
+
+func (r *GrafanaDashboardReconciler) reconcileFolder(ctx context.Context, grafana *grafanav1beta1.Grafana, dashboard *grafanav1beta1.GrafanaDashboard) error {
+	c, err := r.getGrafanaClient(ctx, grafana, dashboard)
+	if err != nil {
+		return err
+	}
 	return c.CreateFolderIfNotExists(dashboard)
 }
 
-func (r *GrafanaDashboardReconciler) reconcilePlugins(c client2.GrafanaClient, dashboard *grafanav1beta1.GrafanaDashboard) error {
+func (r *GrafanaDashboardReconciler) getGrafanaClient(ctx context.Context, grafana *grafanav1beta1.Grafana, dashboard *grafanav1beta1.GrafanaDashboard) (client2.GrafanaClient, error) {
+	client, err := client2.NewGrafanaClient(ctx, r.Client, grafana)
+	if err != nil {
+		return nil, fmt.Errorf("error setting up grafana client: %w", err)
+	}
+	return client, nil
+}
+
+func (r *GrafanaDashboardReconciler) reconcilePlugins(ctx context.Context, grafana *grafanav1beta1.Grafana, dashboard *grafanav1beta1.GrafanaDashboard) error {
 	if dashboard.Spec.Plugins == nil || len(dashboard.Spec.Plugins) == 0 {
 		return nil
+	}
+
+	plugins, err := grafana.Status.Plugins.ConsolidatedConcat(dashboard.Spec.Plugins)
+	if err != nil {
+		return fmt.Errorf("failed to consolidate plugin list: %w", err)
+	}
+
+	grafana.Status.Plugins = plugins
+	if err := r.Client.Status().Update(ctx, grafana); err != nil {
+		return fmt.Errorf("failed to update plugin list in grafana status: %w", err)
 	}
 
 	return nil
