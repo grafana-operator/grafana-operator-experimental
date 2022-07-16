@@ -3,6 +3,7 @@ package grafana
 import (
 	"context"
 	"fmt"
+
 	"github.com/grafana-operator/grafana-operator-experimental/api/v1beta1"
 	config2 "github.com/grafana-operator/grafana-operator-experimental/controllers/config"
 	"github.com/grafana-operator/grafana-operator-experimental/controllers/model"
