@@ -137,27 +137,11 @@ func getVolumeMounts(cr *v1beta1.Grafana, scheme *runtime.Scheme) []v1.VolumeMou
 }
 
 func getContainers(cr *v1beta1.Grafana, scheme *runtime.Scheme, vars *v1beta1.OperatorReconcileVars) []v1.Container { // nolint
-	var containers []v1.Container // nolint
-	var image string
+	var containers []v1.Container
 
-	image = fmt.Sprintf("%s:%s", config2.GrafanaImage, config2.GrafanaVersion)
-	plugins := model.GetPluginsConfigMap(cr, scheme)
+	image := fmt.Sprintf("%s:%s", config2.GrafanaImage, config2.GrafanaVersion)
 
-	// env var to restart containers if plugins change
-	var t = true
 	var envVars []v1.EnvVar
-	envVars = append(envVars, v1.EnvVar{
-		Name: "PLUGINS_HASH",
-		ValueFrom: &v1.EnvVarSource{
-			ConfigMapKeyRef: &v1.ConfigMapKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{
-					Name: plugins.Name,
-				},
-				Key:      "PLUGINS_HASH",
-				Optional: &t,
-			},
-		},
-	})
 
 	// env var to restart container if config changes
 	envVars = append(envVars, v1.EnvVar{
@@ -168,7 +152,7 @@ func getContainers(cr *v1beta1.Grafana, scheme *runtime.Scheme, vars *v1beta1.Op
 	// env var to restart container if plugins change
 	envVars = append(envVars, v1.EnvVar{
 		Name:  "GF_INSTALL_PLUGINS",
-		Value: vars.Plugins,
+		Value: cr.Status.Plugins.String(),
 	})
 
 	containers = append(containers, v1.Container{

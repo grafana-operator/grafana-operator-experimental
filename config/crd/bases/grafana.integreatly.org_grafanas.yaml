@@ -4435,6 +4435,8 @@ spec:
                         type: object
                     type: object
                 type: object
+              externalUrl:
+                type: string
               ingress:
                 properties:
                   metadata:

@@ -53,15 +53,20 @@ type GrafanaComDashboardSpec struct {
 }
 
 type GrafanaDashboardFolderSpec struct {
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	UID  string `json:"uid,omitempty"`
 }
 
 // GrafanaDashboardStatus defines the observed state of GrafanaDashboard
 type GrafanaDashboardStatus struct {
-	GrafanaVersion int64  `json:"grafanaVersion,omitempty"`
-	GrafanaUID     string `json:"grafanaUID,omitempty"`
-	FolderId       int64  `json:"folderId,omitempty"`
+	Content   []byte                                    `json:"content,omitempty"`
+	Instances map[string]GrafanaDashboardInstanceStatus `json:"instances,omitempty"`
+}
+
+type GrafanaDashboardInstanceStatus struct {
+	Version  int64  `json:"Version,omitempty"`
+	UID      string `json:"UID,omitempty"`
+	FolderId int64  `json:"folderId,omitempty"`
 }
 
 //+kubebuilder:object:root=true

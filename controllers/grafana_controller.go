@@ -18,6 +18,9 @@ package controllers
 
 import (
 	"context"
+	"reflect"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/grafana-operator/grafana-operator-experimental/controllers/reconcilers"
 	"github.com/grafana-operator/grafana-operator-experimental/controllers/reconcilers/grafana"
@@ -25,8 +28,6 @@ import (
 	v12 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/discovery"
-	"reflect"
-	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -67,6 +68,12 @@ func (r *GrafanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 		controllerLog.Error(err, "error getting grafana cr")
 		return ctrl.Result{}, err
+	}
+
+	if grafana.Spec.ExternalURL != "" {
+		newStatus := grafana.Status.DeepCopy()
+		newStatus.AdminUrl = grafana.Spec.ExternalURL
+		return r.updateStatus(grafana, newStatus)
 	}
 
 	var finished = true
@@ -144,7 +151,6 @@ func getInstallationStages() []grafanav1beta1.OperatorStageName {
 		grafanav1beta1.OperatorStageServiceAccount,
 		grafanav1beta1.OperatorStageService,
 		grafanav1beta1.OperatorStageIngress,
-		grafanav1beta1.OperatorStagePlugins,
 		grafanav1beta1.OperatorStageDeployment,
 	}
 }
@@ -163,8 +169,6 @@ func (r *GrafanaReconciler) getReconcilerForStage(stage grafanav1beta1.OperatorS
 		return grafana.NewServiceReconciler(r.Client)
 	case grafanav1beta1.OperatorStageIngress:
 		return grafana.NewIngressReconciler(r.Client, r.Discovery)
-	case grafanav1beta1.OperatorStagePlugins:
-		return grafana.NewPluginsReconciler(r.Client)
 	case grafanav1beta1.OperatorStageDeployment:
 		return grafana.NewDeploymentReconciler(r.Client)
 	default:

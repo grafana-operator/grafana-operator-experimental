@@ -43,6 +43,8 @@ spec:
                     type: string
                   uid:
                     type: string
+                required:
+                - name
                 type: object
               grafanaCom:
                 description: grafana.com dashboard id
@@ -122,14 +124,22 @@ spec:
           status:
             description: GrafanaDashboardStatus defines the observed state of GrafanaDashboard
             properties:
-              folderId:
-                format: int64
-                type: integer
-              grafanaUID:
+              content:
+                format: byte
                 type: string
-              grafanaVersion:
-                format: int64
-                type: integer
+              instances:
+                additionalProperties:
+                  properties:
+                    UID:
+                      type: string
+                    Version:
+                      format: int64
+                      type: integer
+                    folderId:
+                      format: int64
+                      type: integer
+                  type: object
+                type: object
             type: object
         type: object
     served: true

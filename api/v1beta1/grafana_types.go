@@ -17,6 +17,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"fmt"
+
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -34,7 +36,6 @@ const (
 	OperatorStageServiceAccount OperatorStageName = "service account"
 	OperatorStageService        OperatorStageName = "service"
 	OperatorStageIngress        OperatorStageName = "ingress"
-	OperatorStagePlugins        OperatorStageName = "plugins"
 	OperatorStageDeployment     OperatorStageName = "deployment"
 )
 
@@ -55,6 +56,7 @@ type OperatorReconcileVars struct {
 
 // GrafanaSpec defines the desired state of Grafana
 type GrafanaSpec struct {
+	ExternalURL           string                   `json:"externalUrl,omitempty"`
 	Config                GrafanaConfig            `json:"config"`
 	Containers            []v1.Container           `json:"containers,omitempty"`
 	Ingress               *IngressNetworkingV1     `json:"ingress,omitempty"`
@@ -662,4 +664,8 @@ func init() {
 
 func (r *Grafana) PreferIngress() bool {
 	return r.Spec.Client != nil && r.Spec.Client.PreferIngress != nil && *r.Spec.Client.PreferIngress
+}
+
+func (r *Grafana) DashboardStatusInstanceKey() string {
+	return fmt.Sprintf("%s/%s", r.Namespace, r.Name)
 }

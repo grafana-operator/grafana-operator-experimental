@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -15,27 +14,8 @@ import (
 	"github.com/grafana-operator/grafana-operator-experimental/controllers/model"
 	gapi "github.com/grafana/grafana-api-golang-client"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-type GrafanaRequest struct {
-	Dashboard  json.RawMessage `json:"dashboard"`
-	FolderId   int64           `json:"folderId"`
-	FolderName string          `json:"folderName"`
-	Overwrite  bool            `json:"overwrite"`
-}
-
-type GrafanaResponse struct {
-	ID         *uint   `json:"id"`
-	OrgID      *uint   `json:"orgId"`
-	Message    *string `json:"message"`
-	Slug       *string `json:"slug"`
-	Version    *int    `json:"version"`
-	Status     *string `json:"resp"`
-	UID        *string `json:"uid"`
-	URL        *string `json:"url"`
-	FolderId   *int64  `json:"folderId"`
-	FolderName string  `json:"folderName"`
-}
 
 type GrafanaClient interface {
 	CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDashboard) error
@@ -47,6 +27,8 @@ type grafanaClientImpl struct {
 	ctx           context.Context
 	grafanaClient *gapi.Client
 	kubeClient    client.Client
+
+	instanceKey string
 }
 
 func NewGrafanaClient(ctx context.Context, c client.Client, grafana *v1beta1.Grafana) (GrafanaClient, error) {
@@ -107,6 +89,7 @@ func NewGrafanaClient(ctx context.Context, c client.Client, grafana *v1beta1.Gra
 		grafanaClient: grafanaClient,
 		kubeClient:    c,
 		ctx:           ctx,
+		instanceKey:   grafana.DashboardStatusInstanceKey(),
 	}, nil
 }
 
@@ -116,7 +99,12 @@ func (r *grafanaClientImpl) CreateFolderIfNotExists(dashboard *v1beta1.GrafanaDa
 		return err
 	}
 
-	dashboard.Status.FolderId = folder.ID
+	old := dashboard.Status.Instances[r.instanceKey]
+	dashboard.Status.Instances[r.instanceKey] = v1beta1.GrafanaDashboardInstanceStatus{
+		FolderId: folder.ID,
+		Version:  old.Version,
+		UID:      old.UID,
+	}
 	err = r.kubeClient.Status().Update(r.ctx, dashboard)
 	if err != nil {
 		// TODO: perhaps blow up more spectacularly when this happens?
@@ -133,32 +121,39 @@ func (r *grafanaClientImpl) CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDa
 		return err
 	}
 
-	if dashboard.Status.GrafanaUID != "" && dashboard.Status.GrafanaVersion != 0 {
-		existing, err := r.grafanaClient.DashboardByUID(dashboard.Status.GrafanaUID)
+	status := dashboard.Status.Instances[r.instanceKey]
+	if status.UID != "" && status.Version != 0 {
+		existing, err := r.grafanaClient.DashboardByUID(status.UID)
 		if err != nil {
 			// TODO: does a 404 trigger this?
 			return err
 		}
-		if dashboard.Status.GrafanaVersion == existing.Model["version"] {
-			// TODO: is this optimization possible?
+		if status.Version == existing.Model["version"] {
+			// TODO: does it make sense to keep track of this?
 			// return nil
 		}
-
 	}
 
 	res, err := r.grafanaClient.NewDashboard(gapi.Dashboard{
 		Overwrite: true,
 		Model:     model,
-		Folder:    dashboard.Status.FolderId,
+		Folder:    status.FolderId,
 		Message:   "Updated by Grafana Operator. ResourceVersion: " + dashboard.ResourceVersion,
 	})
+	log.FromContext(r.ctx).Info("dashboard put result", "res", res, "err", err)
 
 	if err != nil {
 		return err
 	}
 
-	dashboard.Status.GrafanaUID = res.UID
-	dashboard.Status.GrafanaVersion = res.Version
+	dashboard.Status.Instances[r.instanceKey] = v1beta1.GrafanaDashboardInstanceStatus{
+		FolderId: status.FolderId,
+		UID:      res.UID,
+		Version:  res.Version,
+	}
+
+	log.FromContext(r.ctx).Info("updating dashboard status", "dashboard.status", dashboard.Status, "status", status)
+
 	if err = r.kubeClient.Status().Update(r.ctx, dashboard); err != nil {
 		// TODO: perhaps blow up more spectacularly when this happens?
 		return err
@@ -168,5 +163,13 @@ func (r *grafanaClientImpl) CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDa
 }
 
 func (r *grafanaClientImpl) DeleteDashboard(dashboard *v1beta1.GrafanaDashboard) error {
-	return r.grafanaClient.DeleteDashboardByUID(dashboard.Status.GrafanaUID)
+	status := dashboard.Status.Instances[r.instanceKey]
+
+	err := r.grafanaClient.DeleteDashboardByUID(status.UID)
+	if err != nil {
+		return err
+	}
+
+	delete(dashboard.Status.Instances, r.instanceKey)
+	return r.kubeClient.Status().Update(r.ctx, dashboard)
 }
