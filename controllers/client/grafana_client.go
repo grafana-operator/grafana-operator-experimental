@@ -1,8 +1,11 @@
 package client
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -16,6 +19,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+const grafanaComDashboardApiUrlRoot = "https://grafana.com/api/dashboards"
 
 type GrafanaClient interface {
 	CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDashboard) error
@@ -115,7 +120,7 @@ func (r *grafanaClientImpl) CreateFolderIfNotExists(dashboard *v1beta1.GrafanaDa
 }
 
 func (r *grafanaClientImpl) CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDashboard) error {
-	model, err := dashboard.GetContent(r.ctx)
+	model, err := r.getDashboardContent(dashboard)
 	if err != nil {
 		// TODO: error reporting
 		return err
@@ -172,4 +177,93 @@ func (r *grafanaClientImpl) DeleteDashboard(dashboard *v1beta1.GrafanaDashboard)
 
 	delete(dashboard.Status.Instances, r.instanceKey)
 	return r.kubeClient.Status().Update(r.ctx, dashboard)
+}
+
+func (r *grafanaClientImpl) getDashboardContent(dashboard *v1beta1.GrafanaDashboard) (map[string]interface{}, error) {
+	if dashboard.Spec.Json != "" {
+		var res map[string]interface{}
+		err := json.Unmarshal([]byte(dashboard.Spec.Json), &res)
+		return res, err
+	} else if dashboard.Spec.GzipJson != nil {
+		gzipReader, err := gzip.NewReader(bytes.NewReader(dashboard.Spec.GzipJson))
+		if err != nil {
+			return nil, fmt.Errorf("failed to read gzip content: %w", err)
+		}
+		var res map[string]interface{}
+		err = json.NewDecoder(gzipReader).Decode(&res)
+		return res, err
+	} else if dashboard.Spec.URL != "" {
+		return getRemoteDashboard(r.ctx, dashboard.Spec.URL)
+	} else if dashboard.Spec.GrafanaCom != nil {
+		return getGrafanaComDashboard(r.ctx, dashboard.Spec.GrafanaCom)
+	}
+
+	return nil, fmt.Errorf("unable to find source for dashboard content")
+}
+
+func getGrafanaComDashboard(ctx context.Context, source *v1beta1.GrafanaComDashboardSpec) (map[string]interface{}, error) {
+	if source.Revision == nil {
+		rev, err := getLatestGrafanaComRevision(ctx, source)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get latest revision for dashboard id %d: %w", source.Id, err)
+		}
+		source.Revision = &rev
+	}
+
+	url := fmt.Sprintf("%s/%d/revisions/%d/download", grafanaComDashboardApiUrlRoot, source.Id, source.Revision)
+	return getRemoteDashboard(ctx, url)
+}
+
+// This is an incomplete representation of the expected response,
+// including only fields we care about.
+type listDashboardRevisionsResponse struct {
+	Items []dashboardRevisionItem `json:"items"`
+}
+
+type dashboardRevisionItem struct {
+	Revision int `json:"revision"`
+}
+
+func getLatestGrafanaComRevision(ctx context.Context, source *v1beta1.GrafanaComDashboardSpec) (int, error) {
+	url := fmt.Sprintf("%s/%d/revisions", grafanaComDashboardApiUrlRoot, source.Id)
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0, fmt.Errorf("failed to make request to %s: %w", url, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return 0, fmt.Errorf("request to list available grafana dashboard revisions failed with status code '%d'", resp.StatusCode)
+	}
+
+	var listResponse listDashboardRevisionsResponse
+	err = json.NewDecoder(resp.Body).Decode(&listResponse)
+	if err != nil {
+		return -1, err
+	}
+
+	var max int
+	for _, i := range listResponse.Items {
+		if i.Revision > max {
+			max = i.Revision
+		}
+	}
+
+	return max, nil
+}
+
+func getRemoteDashboard(ctx context.Context, url string) (map[string]interface{}, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request to %s: %w", url, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("request to '%s' failed with status code '%d'", url, resp.StatusCode)
+	}
+
+	var dashboard map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&dashboard)
+	return dashboard, err
 }

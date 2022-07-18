@@ -17,9 +17,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	"context"
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,6 +27,9 @@ import (
 type GrafanaDashboardSpec struct {
 	// dashboard json
 	Json string `json:"json,omitempty"`
+
+	// gzipped dashboard json
+	GzipJson []byte `json:"gzipJson,omitempty"`
 
 	// dashboard remote url
 	URL string `json:"url,omitempty"`
@@ -48,8 +48,8 @@ type GrafanaDashboardSpec struct {
 }
 
 type GrafanaComDashboardSpec struct {
-	Id       string `json:"id"`
-	Revision uint64 `json:"revision,omitempty"`
+	Id       int  `json:"id"`
+	Revision *int `json:"revision,omitempty"`
 }
 
 type GrafanaDashboardFolderSpec struct {
@@ -92,28 +92,4 @@ type GrafanaDashboardList struct {
 
 func init() {
 	SchemeBuilder.Register(&GrafanaDashboard{}, &GrafanaDashboardList{})
-}
-
-func (r *GrafanaDashboard) GetContent(ctx context.Context) (map[string]interface{}, error) {
-	if r.Spec.Json != "" {
-		var res map[string]interface{}
-		err := json.Unmarshal([]byte(r.Spec.Json), &res)
-		return res, err
-	} else if r.Spec.URL != "" {
-		return getRemoteDashboard(ctx, r.Spec.URL)
-	} else if r.Spec.GrafanaCom != nil {
-		return getGrafanaComDashboard(ctx, r.Spec.GrafanaCom.Id)
-	}
-
-	return nil, nil
-}
-
-func getGrafanaComDashboard(ctx context.Context, id string) (map[string]interface{}, error) {
-	// TODO: proper URL for grafana com
-	url := "https://grafana.com/" + id
-	return getRemoteDashboard(ctx, url)
-}
-
-func getRemoteDashboard(ctx context.Context, url string) (map[string]interface{}, error) {
-	return nil, nil
 }
