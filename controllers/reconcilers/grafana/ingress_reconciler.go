@@ -65,6 +65,8 @@ func (r *IngressReconciler) reconcileIngress(ctx context.Context, cr *v1beta1.Gr
 
 	// try to assign the admin url
 	if cr.PreferIngress() {
+		// TODO: relying on the ingress status field might be problematic
+		// TODO: hardcoded https
 		if len(ingress.Status.LoadBalancer.Ingress) > 0 {
 			ingress := ingress.Status.LoadBalancer.Ingress[0]
 			if ingress.Hostname != "" {

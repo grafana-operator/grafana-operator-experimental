@@ -37,6 +37,9 @@ type GrafanaDashboardSpec struct {
 	// grafana.com dashboard id
 	GrafanaCom *GrafanaComDashboardSpec `json:"grafanaCom,omitempty"`
 
+	// configmap ref
+	// TODO
+
 	// dashboard folder
 	Folder *GrafanaDashboardFolderSpec `json:"folder,omitempty"`
 

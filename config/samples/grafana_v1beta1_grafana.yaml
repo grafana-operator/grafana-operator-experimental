@@ -6,8 +6,8 @@ metadata:
   labels:
     dashboards: a
 spec:
-  client:
-    preferIngress: true
+  # client:
+  # preferIngress: true
   config:
     log:
       mode: "console"
