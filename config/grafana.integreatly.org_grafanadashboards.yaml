@@ -50,13 +50,16 @@ spec:
                 description: grafana.com dashboard id
                 properties:
                   id:
-                    type: string
+                    type: integer
                   revision:
-                    format: int64
                     type: integer
                 required:
                 - id
                 type: object
+              gzipJson:
+                description: gzipped dashboard json
+                format: byte
+                type: string
               instanceSelector:
                 description: selects Grafanas for import
                 properties:
