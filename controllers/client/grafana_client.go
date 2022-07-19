@@ -145,18 +145,16 @@ func (r *grafanaClientImpl) CreateFolderIfNotExists(dashboard *v1beta1.GrafanaDa
 func (r *grafanaClientImpl) CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDashboard) error {
 	model, err := r.getDashboardContent(dashboard)
 	if err != nil {
-		// TODO: error reporting
+		// TODO: set error in status, backoff
 		return err
 	}
 
 	status := dashboard.Status.Instances[r.instanceKey]
 	if status.UID != "" && status.Version != 0 {
 		existing, err := r.grafanaClient.DashboardByUID(status.UID)
-		if err != nil {
-			// TODO: does a 404 trigger this?
+		if err != nil && !strings.Contains(err.Error(), "404") {
 			return err
-		}
-		if float64(status.Version) == existing.Model["version"].(float64) {
+		} else if err == nil && float64(status.Version) == existing.Model["version"].(float64) {
 			return nil
 		}
 	}
@@ -230,7 +228,7 @@ func getGrafanaComDashboard(ctx context.Context, source *v1beta1.GrafanaComDashb
 		source.Revision = &rev
 	}
 
-	url := fmt.Sprintf("%s/%d/revisions/%d/download", grafanaComDashboardApiUrlRoot, source.Id, source.Revision)
+	url := fmt.Sprintf("%s/%d/revisions/%d/download", grafanaComDashboardApiUrlRoot, source.Id, *source.Revision)
 	return getRemoteDashboard(ctx, url)
 }
 
@@ -262,7 +260,9 @@ func getLatestGrafanaComRevision(ctx context.Context, source *v1beta1.GrafanaCom
 		return -1, err
 	}
 
-	var max int
+	log.FromContext(ctx).Info("grafanacom revision", "resp", listResponse)
+
+	max := 0
 	for _, i := range listResponse.Items {
 		if i.Revision > max {
 			max = i.Revision

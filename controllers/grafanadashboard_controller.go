@@ -18,11 +18,12 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	client2 "github.com/grafana-operator/grafana-operator-experimental/controllers/client"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -61,7 +62,7 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	err := r.Get(ctx, req.NamespacedName, dashboard)
 
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) {
 			controllerLog.Info("grafana dashboard cr has been deleted", "name", req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
@@ -125,6 +126,8 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		dashboard.Status.Instances = map[string]grafanav1beta1.GrafanaDashboardInstanceStatus{}
 	}
 
+	// TODO: error backoff
+
 	complete := true
 	for _, grafana := range instances.Items {
 		// an admin url is required to interact with grafana
@@ -156,6 +159,9 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		err = r.reconcileDashboard(ctx, &grafana, dashboard)
 		if err != nil {
 			complete = false
+			if e := errors.Unwrap(err); e != nil {
+				err = e
+			}
 			controllerLog.Error(err, "error reconciling dashboard", "grafana", grafana.Name, "grafanaNamespace", grafana.Namespace)
 			continue
 		} else {

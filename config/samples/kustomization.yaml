@@ -1,5 +1,7 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- grafana_v1beta1_grafana.yaml
-- grafana_v1beta1_grafanadashboard.yaml
+  - grafana_v1beta1_grafana.yaml
+  - grafana_v1beta1_grafanadashboard.json.yaml
+  - grafana_v1beta1_grafanadashboard.url.yaml
+  - grafana_v1beta1_grafanadashboard.grafanacom.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
