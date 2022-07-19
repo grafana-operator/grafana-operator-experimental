@@ -4106,56 +4106,6 @@ spec:
                         x-kubernetes-list-type: atomic
                     type: object
                 type: object
-              initResources:
-                properties:
-                  limits:
-                    additionalProperties:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                      x-kubernetes-int-or-string: true
-                    type: object
-                  requests:
-                    additionalProperties:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                      x-kubernetes-int-or-string: true
-                    type: object
-                type: object
-              jsonnet:
-                properties:
-                  libraryLabelSelector:
-                    properties:
-                      matchExpressions:
-                        items:
-                          properties:
-                            key:
-                              type: string
-                            operator:
-                              type: string
-                            values:
-                              items:
-                                type: string
-                              type: array
-                          required:
-                          - key
-                          - operator
-                          type: object
-                        type: array
-                      matchLabels:
-                        additionalProperties:
-                          type: string
-                        type: object
-                    type: object
-                    x-kubernetes-map-type: atomic
-                type: object
-              managedNamespaces:
-                items:
-                  type: string
-                type: array
               persistentVolumeClaim:
                 properties:
                   metadata:
