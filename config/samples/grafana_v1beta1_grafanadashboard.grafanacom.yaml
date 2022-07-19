@@ -1,0 +1,10 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: grafanadashboard-sample-grafanacom
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: a
+  grafanaCom:
+    id: 9614

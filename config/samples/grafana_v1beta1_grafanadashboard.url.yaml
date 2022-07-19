@@ -1,0 +1,9 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: grafanadashboard-sample-url
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: a
+  url: "https://grafana.com/api/dashboards/9614/revisions/1/download"
