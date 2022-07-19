@@ -114,12 +114,18 @@ var _ = Describe("GrafanaDashboard controller", func() {
 
 		handlers = http.NewServeMux()
 		handlers.HandleFunc("/api/folders", func(w http.ResponseWriter, r *http.Request) {
-			var folder gapi.Folder
-			json.NewDecoder(r.Body).Decode(&folder)
-			mockAPIRequests["/api/folders"] = append(mockAPIRequests["/api/folders"], folder)
-			json.NewEncoder(w).Encode(&gapi.Folder{
-				ID: 13,
-			})
+			if r.Method == "POST" {
+				var folder gapi.Folder
+				json.NewDecoder(r.Body).Decode(&folder)
+				mockAPIRequests["/api/folders"] = append(mockAPIRequests["/api/folders"], folder)
+				json.NewEncoder(w).Encode(&gapi.Folder{
+					ID: 13,
+				})
+			} else {
+				json.NewEncoder(w).Encode(&[]gapi.Folder{{
+					ID: 13,
+				}})
+			}
 		})
 		handlers.HandleFunc("/api/dashboards/db", func(w http.ResponseWriter, r *http.Request) {
 			var dash gapi.Dashboard
@@ -147,10 +153,13 @@ var _ = Describe("GrafanaDashboard controller", func() {
 	})
 
 	AfterEach(func() {
-		mockGrafanaAPI.Close()
 		Expect(k8sClient.Delete(ctx, dashboard)).Should(Succeed())
+		Eventually(func() error {
+			return k8sClient.Get(ctx, dashboardLookupKey, createdDashboard)
+		}).ShouldNot(Succeed())
 		Expect(k8sClient.Delete(ctx, grafana)).Should(Succeed())
 		Expect(k8sClient.Delete(ctx, adminCredentials)).Should(Succeed())
+		mockGrafanaAPI.Close()
 	})
 
 	Context("When creating GrafanaDashboard", func() {

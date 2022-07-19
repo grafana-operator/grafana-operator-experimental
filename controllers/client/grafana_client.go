@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/grafana-operator/grafana-operator-experimental/api/v1beta1"
@@ -99,9 +100,31 @@ func NewGrafanaClient(ctx context.Context, c client.Client, grafana *v1beta1.Gra
 }
 
 func (r *grafanaClientImpl) CreateFolderIfNotExists(dashboard *v1beta1.GrafanaDashboard) error {
-	folder, err := r.grafanaClient.NewFolder(dashboard.Spec.Folder.Name, dashboard.Spec.Folder.UID)
+	folders, err := r.grafanaClient.Folders()
 	if err != nil {
 		return err
+	}
+	var folder *gapi.Folder
+	for _, f := range folders {
+		if dashboard.Spec.Folder.UID != "" {
+			if dashboard.Spec.Folder.UID == f.UID {
+				folder = &f
+				break
+			}
+		} else {
+			if dashboard.Spec.Folder.Name == f.Title {
+				folder = &f
+				break
+			}
+		}
+	}
+
+	if folder == nil {
+		f, err := r.grafanaClient.NewFolder(dashboard.Spec.Folder.Name, dashboard.Spec.Folder.UID)
+		if err != nil {
+			return err
+		}
+		folder = &f
 	}
 
 	old := dashboard.Status.Instances[r.instanceKey]
@@ -133,9 +156,8 @@ func (r *grafanaClientImpl) CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDa
 			// TODO: does a 404 trigger this?
 			return err
 		}
-		if status.Version == existing.Model["version"] {
-			// TODO: does it make sense to keep track of this?
-			// return nil
+		if float64(status.Version) == existing.Model["version"].(float64) {
+			return nil
 		}
 	}
 
@@ -145,10 +167,8 @@ func (r *grafanaClientImpl) CreateOrUpdateDashboard(dashboard *v1beta1.GrafanaDa
 		Folder:    status.FolderId,
 		Message:   "Updated by Grafana Operator. ResourceVersion: " + dashboard.ResourceVersion,
 	})
-	log.FromContext(r.ctx).Info("dashboard put result", "res", res, "err", err)
-
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to put dashboard: %w", err)
 	}
 
 	dashboard.Status.Instances[r.instanceKey] = v1beta1.GrafanaDashboardInstanceStatus{
@@ -171,7 +191,7 @@ func (r *grafanaClientImpl) DeleteDashboard(dashboard *v1beta1.GrafanaDashboard)
 	status := dashboard.Status.Instances[r.instanceKey]
 
 	err := r.grafanaClient.DeleteDashboardByUID(status.UID)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "404") {
 		return err
 	}
 

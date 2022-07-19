@@ -178,7 +178,7 @@ func (r *GrafanaDashboardReconciler) reconcileDashboard(ctx context.Context, gra
 	}
 	llog := log.FromContext(ctx)
 
-	if strings.TrimSpace(dashboard.Spec.Json) == "" && dashboard.Spec.URL == "" && dashboard.Spec.GrafanaCom == nil {
+	if strings.TrimSpace(dashboard.Spec.Json) == "" && dashboard.Spec.GzipJson == nil && dashboard.Spec.URL == "" && dashboard.Spec.GrafanaCom == nil {
 		llog.Info("missing json, url, or grafanacom id")
 		return nil
 	}
@@ -191,7 +191,11 @@ func (r *GrafanaDashboardReconciler) handleFinalizerForInstance(ctx context.Cont
 	if err != nil {
 		return err
 	}
-	return c.DeleteDashboard(dashboard)
+	err = c.DeleteDashboard(dashboard)
+	if err != nil {
+		return fmt.Errorf("Failed to delete dashboard: %w", err)
+	}
+	return nil
 }
 
 func (r *GrafanaDashboardReconciler) reconcileFolder(ctx context.Context, grafana *grafanav1beta1.Grafana, dashboard *grafanav1beta1.GrafanaDashboard) error {

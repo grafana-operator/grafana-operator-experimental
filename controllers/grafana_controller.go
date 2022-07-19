@@ -37,7 +37,7 @@ import (
 )
 
 const (
-	RequeueDelaySuccess = 10 * time.Second
+	RequeueDelaySuccess = 10 * time.Minute
 	RequeueDelayError   = 10 * time.Second
 )
 
