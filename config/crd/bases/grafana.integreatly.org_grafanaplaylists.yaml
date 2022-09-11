@@ -31,21 +31,22 @@ spec:
               dashboards:
                 items:
                   properties:
-                    name:
+                    order:
+                      format: int64
+                      type: integer
+                    title:
+                      type: string
+                    type:
                       enum:
                       - dashboard_by_id
                       - dashboard_by_tag
                       type: string
-                    order:
-                      type: string
-                    title:
-                      type: string
                     value:
                       type: string
                   required:
-                  - name
                   - order
                   - title
+                  - type
                   - value
                   type: object
                 type: array

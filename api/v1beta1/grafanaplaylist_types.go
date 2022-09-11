@@ -38,10 +38,10 @@ type GrafanaPlayListSpec struct {
 
 type PlaylistDashboards struct {
 	// +kubebuilder:validation:Enum=dashboard_by_id;dashboard_by_tag
-	Type  string `json:"name"`
+	Type  string `json:"type"`
 	Value string `json:"value"`
 	// The order of the dashboard in the playlist
-	Order string `json:"order"`
+	Order int64 `json:"order"`
 	// The title of the dashboard in the playlist
 	Title string `json:"title"`
 }

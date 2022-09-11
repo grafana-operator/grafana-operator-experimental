@@ -1,0 +1,16 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaPlayList
+metadata:
+  name: tv
+spec:
+  name: tv1
+  interval: "5m"
+  dashboards:
+    - title: "dashbord-tag"
+      order: 1
+      type: dashboard_by_tag
+      value: "tv-tag"
+    - title: "dashboard-uid"
+      order: 2
+      type: dashboard_by_id
+      value: "random-uid"

@@ -41,23 +41,24 @@ spec:
                   be in the playlist
                 items:
                   properties:
-                    name:
+                    order:
+                      description: The order of the dashboard in the playlist
+                      format: int64
+                      type: integer
+                    title:
+                      description: The title of the dashboard in the playlist
+                      type: string
+                    type:
                       enum:
                       - dashboard_by_id
                       - dashboard_by_tag
                       type: string
-                    order:
-                      description: The order of the dashboard in the playlist
-                      type: string
-                    title:
-                      description: The title of the dashboard in the playlist
-                      type: string
                     value:
                       type: string
                   required:
-                  - name
                   - order
                   - title
+                  - type
                   - value
                   type: object
                 type: array
