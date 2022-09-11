@@ -116,7 +116,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "GrafanaDatasource")
 		os.Exit(1)
 	}
-	if err = (&controllers.GrafanaPlaylistReconciler{
+	if err = (&controllers.GrafanaPlayListReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Log:    logr.Logger{},
