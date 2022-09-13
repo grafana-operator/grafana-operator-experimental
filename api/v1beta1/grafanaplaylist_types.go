@@ -25,15 +25,19 @@ import (
 
 // GrafanaPlayListSpec defines the desired state of GrafanaPlayList
 type GrafanaPlayListSpec struct {
+	PlayList *GrafanaPlayListInternal `json:"playList,omitempty"`
+
+	// selects Grafanas for import
+	InstanceSelector *metav1.LabelSelector `json:"instanceSelector,omitempty"`
+}
+
+type GrafanaPlayListInternal struct {
 	// Name of the playlist
 	Name string `json:"name"`
 	// Interval how often the playlist should change dashboard
 	Interval string `json:"interval"`
-	// PlaylistDashboards is a list of dashboards that should be in the playlist
-	PlaylistDashboards DashboardsList `json:"dashboards,omitempty"`
-
-	// selects Grafanas for import
-	InstanceSelector *metav1.LabelSelector `json:"instanceSelector,omitempty"`
+	// DashboardList is a list of dashboards that should be in the playlist
+	Items []PlaylistDashboards `json:"dashboardsList,omitempty"`
 }
 
 type PlaylistDashboards struct {
@@ -46,7 +50,8 @@ type PlaylistDashboards struct {
 	Title string `json:"title"`
 }
 
-type DashboardsList []PlaylistDashboards
+// TODO is this layer useful?
+//type DashboardsList []PlaylistDashboards
 
 // GrafanaPlayListStatus defines the observed state of GrafanaPlayList
 type GrafanaPlayListStatus struct {
