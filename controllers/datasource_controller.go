@@ -213,6 +213,7 @@ func (r *GrafanaDatasourceReconciler) UpdateStatus(ctx context.Context, cr *graf
 }
 
 func (r *GrafanaDatasourceReconciler) ExistingId(client *gapi.Client, cr *grafanav1beta1.GrafanaDatasource) (*int64, error) {
+	//TODO we don't need to get all datasources, just assume that it exist and if we get a 404 we know what to return.
 	datasources, err := client.DataSources()
 	if err != nil {
 		return nil, err

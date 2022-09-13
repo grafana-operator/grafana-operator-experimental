@@ -257,3 +257,57 @@ func (in *Grafana) RemoveDatasource(namespace string, name string) error {
 	in.Annotations[AnnotationDatasources] = string(bytes)
 	return nil
 }
+
+func (in *Grafana) GetPlayLists() NamespacedResources {
+	playLists := NamespacedResources{}
+	playLists.Deserialize(in.Annotations[AnnotationDatasources])
+	return playLists
+}
+
+func (in *Grafana) FindPlayListByNamespaceAndName(namespace string, name string) (bool, string) {
+	managedPlayLists := in.GetPlayLists()
+	for ns, playLists := range managedPlayLists {
+		if ns == namespace {
+			for _, pl := range playLists {
+				if pl.Name == name {
+					return true, pl.UID
+				}
+			}
+		}
+	}
+	return false, ""
+}
+
+func (in *Grafana) FindPlayListByUID(uid string) bool {
+	managedPlayLists := in.GetPlayLists()
+	for _, playLists := range managedPlayLists {
+		for _, pl := range playLists {
+			if pl.UID == uid {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (in *Grafana) AddPlayList(namespace string, name string, uid string) error {
+	managedPlayLists := in.GetPlayLists()
+	newDatasources := managedPlayLists.AddResource(namespace, name, uid)
+	bytes, err := newDatasources.Serialize()
+	if err != nil {
+		return err
+	}
+	in.Annotations[AnnotationDatasources] = string(bytes)
+	return nil
+}
+
+func (in *Grafana) RemovePlayList(namespace string, name string) error {
+	managedPlayLists := in.GetPlayLists()
+	newDatasources := managedPlayLists.RemoveResource(namespace, name)
+	bytes, err := newDatasources.Serialize()
+	if err != nil {
+		return err
+	}
+	in.Annotations[AnnotationDatasources] = string(bytes)
+	return nil
+}
