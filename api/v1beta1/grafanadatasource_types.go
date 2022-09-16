@@ -20,6 +20,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -109,7 +110,7 @@ func (in *GrafanaDatasource) Hash() string {
 		}
 
 		if in.Spec.Datasource.OrgID != nil {
-			hash.Write([]byte(string(*in.Spec.Datasource.OrgID)))
+			hash.Write([]byte(fmt.Sprint(*in.Spec.Datasource.OrgID)))
 		}
 	}
 
