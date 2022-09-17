@@ -3,17 +3,18 @@ kind: GrafanaPlayList
 metadata:
   name: tv
 spec:
-  name: tv1
-  interval: "5m"
   instanceSelector:
-    matchLabel:
+    matchLabels:
       app: grafana
-  dashboards:
-    - title: "dashbord-tag"
-      order: 1
-      type: dashboard_by_tag
-      value: "tv-tag"
-    - title: "dashboard-uid"
-      order: 2
-      type: dashboard_by_id
-      value: "random-uid"
+  playList:
+    name: tv1
+    interval: "5m"
+    dashboardsList:
+      - title: "dashbord-tag"
+        order: 1
+        type: dashboard_by_tag
+        value: "tv-tag"
+      - title: "dashboard-uid"
+        order: 2
+        type: dashboard_by_id
+        value: "random-uid"

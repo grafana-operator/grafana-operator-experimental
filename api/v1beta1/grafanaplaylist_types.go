@@ -20,6 +20,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	gapi "github.com/grafana/grafana-api-golang-client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -45,7 +46,7 @@ type PlaylistDashboards struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
 	// The order of the dashboard in the playlist
-	Order int64 `json:"order"`
+	Order int `json:"order"`
 	// The title of the dashboard in the playlist
 	Title string `json:"title"`
 }
@@ -87,6 +88,31 @@ func (in *GrafanaPlayList) Hash() string {
 
 func (in *GrafanaPlayList) Unchanged() bool {
 	return in.Hash() == in.Status.Hash
+}
+
+func (u *GrafanaPlayListInternal) PlayListConverter() gapi.Playlist {
+	dashboardItems := playListDashboards(u.Items)
+
+	playList := gapi.Playlist{
+		Name:     u.Name,
+		Interval: u.Interval,
+		Items:    dashboardItems,
+	}
+	return playList
+}
+
+func playListDashboards(playlistDashboards []PlaylistDashboards) []gapi.PlaylistItem {
+	var clientPlayList []gapi.PlaylistItem
+	for _, d := range playlistDashboards {
+		item := gapi.PlaylistItem{
+			Type:  d.Type,
+			Value: d.Value,
+			Order: d.Order,
+			Title: d.Title,
+		}
+		clientPlayList = append(clientPlayList, item)
+	}
+	return clientPlayList
 }
 
 func init() {

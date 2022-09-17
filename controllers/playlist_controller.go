@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -156,6 +155,7 @@ func (r *GrafanaPlayListReconciler) onPlayListDeleted(ctx context.Context, names
 func (r *GrafanaPlayListReconciler) onPlayListCreated(ctx context.Context, grafana *grafanav1beta1.Grafana, cr *grafanav1beta1.GrafanaPlayList) error {
 	if cr.Spec.PlayList == nil {
 		// TODO should this be nil? If they have managed to create a CR without required config it should return an error?
+		// Do we even need to test for this?
 		return nil
 	}
 
@@ -164,31 +164,20 @@ func (r *GrafanaPlayListReconciler) onPlayListCreated(ctx context.Context, grafa
 		return err
 	}
 
-	id, err := r.ExistingId(grafanaClient, cr)
+	uid, err := r.ExistingUId(grafanaClient, cr)
 	if err != nil {
 		return err
 	}
+	clientPlayList := cr.Spec.PlayList.PlayListConverter()
 
-	// always use the same uid for CR and datasource
-	cr.Spec.Datasource.UID = string(cr.UID)
-	datasourceBytes, err := json.Marshal(cr.Spec.Datasource)
-	if err != nil {
-		return err
-	}
-
-	if id == nil {
-		_, err = grafanaClient.NewDataSourceFromRawData(datasourceBytes)
+	if uid == "" {
+		_, err = grafanaClient.NewPlaylist(clientPlayList)
 		// already exists error?
 		if err != nil && !strings.Contains(err.Error(), "status: 409") {
 			return err
 		}
-	} else if cr.Unchanged() == false {
-		err := grafanaClient.UpdateDataSourceFromRawData(*id, datasourceBytes)
-		if err != nil {
-			return err
-		}
 	} else {
-		// datasource exists and is unchanged, nothing to do
+		// playList exists and is unchanged, nothing to do
 		return nil
 	}
 
@@ -197,22 +186,26 @@ func (r *GrafanaPlayListReconciler) onPlayListCreated(ctx context.Context, grafa
 		return err
 	}
 
-	err = grafana.AddDatasource(cr.Namespace, cr.Name, string(cr.UID))
+	err = grafana.AddPlayList(cr.Namespace, cr.Name, string(cr.UID))
 	if err != nil {
 		return err
 	}
 
 	return r.Client.Update(ctx, grafana)
-	return nil
 }
 
 func (r *GrafanaPlayListReconciler) UpdateStatus(ctx context.Context, cr *grafanav1beta1.GrafanaPlayList) error {
-	return nil
+	cr.Status.Hash = cr.Hash()
+	return r.Client.Status().Update(ctx, cr)
 }
 
-func (r *GrafanaPlayListReconciler) ExistingId(client *gapi.Client, cr *grafanav1beta1.GrafanaPlayList) (*int64, error) {
-
-	return nil, nil
+func (r *GrafanaPlayListReconciler) ExistingUId(client *gapi.Client, cr *grafanav1beta1.GrafanaPlayList) (string, error) {
+	playList, err := client.Playlist(string(cr.UID))
+	if err != nil {
+		return "", err
+	}
+	// Grafana >= 9.0 uses UID. We only support Grafana >= 9.0.
+	return playList.UID, err
 }
 
 // SetupWithManager sets up the controller with the Manager.

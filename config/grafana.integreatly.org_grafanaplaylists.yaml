@@ -36,32 +36,6 @@ spec:
           spec:
             description: GrafanaPlayListSpec defines the desired state of GrafanaPlayList
             properties:
-              dashboards:
-                description: PlaylistDashboards is a list of dashboards that should
-                  be in the playlist
-                items:
-                  properties:
-                    order:
-                      description: The order of the dashboard in the playlist
-                      format: int64
-                      type: integer
-                    title:
-                      description: The title of the dashboard in the playlist
-                      type: string
-                    type:
-                      enum:
-                      - dashboard_by_id
-                      - dashboard_by_tag
-                      type: string
-                    value:
-                      type: string
-                  required:
-                  - order
-                  - title
-                  - type
-                  - value
-                  type: object
-                type: array
               instanceSelector:
                 description: selects Grafanas for import
                 properties:
@@ -106,15 +80,43 @@ spec:
                       are ANDed.
                     type: object
                 type: object
-              interval:
-                description: Interval how often the playlist should change dashboard
-                type: string
-              name:
-                description: Name of the playlist
-                type: string
-            required:
-            - interval
-            - name
+              playList:
+                properties:
+                  dashboardsList:
+                    description: DashboardList is a list of dashboards that should
+                      be in the playlist
+                    items:
+                      properties:
+                        order:
+                          description: The order of the dashboard in the playlist
+                          type: integer
+                        title:
+                          description: The title of the dashboard in the playlist
+                          type: string
+                        type:
+                          enum:
+                          - dashboard_by_id
+                          - dashboard_by_tag
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - order
+                      - title
+                      - type
+                      - value
+                      type: object
+                    type: array
+                  interval:
+                    description: Interval how often the playlist should change dashboard
+                    type: string
+                  name:
+                    description: Name of the playlist
+                    type: string
+                required:
+                - interval
+                - name
+                type: object
             type: object
           status:
             description: GrafanaPlayListStatus defines the observed state of GrafanaPlayList

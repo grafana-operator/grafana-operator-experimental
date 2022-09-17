@@ -28,28 +28,6 @@ spec:
             type: object
           spec:
             properties:
-              dashboards:
-                items:
-                  properties:
-                    order:
-                      format: int64
-                      type: integer
-                    title:
-                      type: string
-                    type:
-                      enum:
-                      - dashboard_by_id
-                      - dashboard_by_tag
-                      type: string
-                    value:
-                      type: string
-                  required:
-                  - order
-                  - title
-                  - type
-                  - value
-                  type: object
-                type: array
               instanceSelector:
                 properties:
                   matchExpressions:
@@ -73,13 +51,37 @@ spec:
                       type: string
                     type: object
                 type: object
-              interval:
-                type: string
-              name:
-                type: string
-            required:
-            - interval
-            - name
+              playList:
+                properties:
+                  dashboardsList:
+                    items:
+                      properties:
+                        order:
+                          type: integer
+                        title:
+                          type: string
+                        type:
+                          enum:
+                          - dashboard_by_id
+                          - dashboard_by_tag
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - order
+                      - title
+                      - type
+                      - value
+                      type: object
+                    type: array
+                  interval:
+                    type: string
+                  name:
+                    type: string
+                required:
+                - interval
+                - name
+                type: object
             type: object
           status:
             properties:
