@@ -154,7 +154,7 @@ func (r *GrafanaPlayListReconciler) onPlayListDeleted(ctx context.Context, names
 }
 
 func (r *GrafanaPlayListReconciler) onPlayListCreated(ctx context.Context, grafana *grafanav1beta1.Grafana, cr *grafanav1beta1.GrafanaPlayList) error {
-	if cr.Spec.Name == "" {
+	if cr.Spec.PlayList == nil {
 		// TODO should this be nil? If they have managed to create a CR without required config it should return an error?
 		return nil
 	}
