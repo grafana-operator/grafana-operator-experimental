@@ -10,7 +10,8 @@ spec:
   ingress:
     spec:
       rules:
-        - http:
+        - host: edvin.io
+          http:
             paths:
               - backend:
                   service:
