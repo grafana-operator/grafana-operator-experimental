@@ -3,7 +3,7 @@ package config
 const (
 	// Grafana
 	GrafanaImage   = "docker.io/grafana/grafana"
-	GrafanaVersion = "9.0.0"
+	GrafanaVersion = "9.1.6"
 
 	// Paths
 	GrafanaDataPath         = "/var/lib/grafana"
@@ -18,8 +18,9 @@ const (
 	GrafanaPluginsEnvVar       = "GF_INSTALL_PLUGINS"
 
 	// Networking
-	GrafanaHttpPort     int = 3000
-	GrafanaHttpPortName     = "grafana"
+	GrafanaHttpPort       int = 3000
+	GrafanaHttpPortName       = "grafana"
+	GrafanaServerProtocol     = "http"
 
 	// Data storage
 	GrafanaProvisionPluginVolumeName    = "grafana-provision-plugins"
