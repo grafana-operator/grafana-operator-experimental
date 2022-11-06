@@ -2,14 +2,13 @@ package client
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
+	"fmt"
+	"github.com/grafana-operator/grafana-operator-experimental/controllers/metrics"
+	v1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/url"
-	"strconv"
 	"time"
-
-	"github.com/grafana-operator/grafana-operator-experimental/controllers/metrics"
 
 	"github.com/grafana-operator/grafana-operator-experimental/api/v1beta1"
 	"github.com/grafana-operator/grafana-operator-experimental/controllers/config"
@@ -18,35 +17,84 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type instrumentedRoundTripper struct {
-	instanceName string
-	wrapped      http.RoundTripper
+type grafanaAdminCredentials struct {
+	username string
+	password string
 }
 
-func newInstrumentedRoundTripper(instanceName string) http.RoundTripper {
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
+func getAdminCredentials(ctx context.Context, c client.Client, grafana *v1beta1.Grafana) (*grafanaAdminCredentials, error) {
+	deployment := model.GetGrafanaDeployment(grafana, nil)
+	selector := client.ObjectKey{
+		Namespace: deployment.Namespace,
+		Name:      deployment.Name,
 	}
 
-	return &instrumentedRoundTripper{
-		instanceName: instanceName,
-		wrapped:      transport,
+	err := c.Get(ctx, selector, deployment)
+	if err != nil {
+		return nil, err
 	}
-}
 
-func (in *instrumentedRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	resp, err := in.wrapped.RoundTrip(r)
-	if resp != nil {
-		metrics.GrafanaApiRequests.WithLabelValues(
-			in.instanceName,
-			r.URL.Path,
-			r.Method,
-			strconv.Itoa(resp.StatusCode)).
-			Inc()
+	credentials := &grafanaAdminCredentials{}
+	getValueFromSecret := func(ref *v1.SecretKeySelector) ([]byte, error) {
+		secret := &v1.Secret{}
+		selector := client.ObjectKey{
+			Name:      ref.Name,
+			Namespace: grafana.Namespace,
+		}
+		err := c.Get(ctx, selector, secret)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if secret.Data == nil {
+			return nil, errors.New(fmt.Sprintf("empty credential secret: %v/%v", grafana.Namespace, ref.Name))
+		}
+
+		if val, ok := secret.Data[ref.Key]; ok {
+			return val, nil
+		}
+
+		return nil, errors.New(fmt.Sprintf("admin credentials not found: %v/%v", grafana.Namespace, ref.Name))
 	}
-	return resp, err
+
+	for _, container := range deployment.Spec.Template.Spec.Containers {
+		for _, env := range container.Env {
+			if env.Name == config.GrafanaAdminUserEnvVar {
+				if env.Value != "" {
+					credentials.username = env.Value
+					continue
+				}
+
+				if env.ValueFrom != nil {
+					if env.ValueFrom.SecretKeyRef != nil {
+						usernameFromSecret, err := getValueFromSecret(env.ValueFrom.SecretKeyRef)
+						if err != nil {
+							return nil, err
+						}
+						credentials.username = string(usernameFromSecret)
+					}
+				}
+			}
+			if env.Name == config.GrafanaAdminPasswordEnvVar {
+				if env.Value != "" {
+					credentials.password = env.Value
+					continue
+				}
+
+				if env.ValueFrom != nil {
+					if env.ValueFrom.SecretKeyRef != nil {
+						passwordFromSecret, err := getValueFromSecret(env.ValueFrom.SecretKeyRef)
+						if err != nil {
+							return nil, err
+						}
+						credentials.password = string(passwordFromSecret)
+					}
+				}
+			}
+		}
+	}
+	return credentials, nil
 }
 
 func NewGrafanaClient(ctx context.Context, c client.Client, grafana *v1beta1.Grafana) (*grapi.Client, error) {
@@ -60,39 +108,19 @@ func NewGrafanaClient(ctx context.Context, c client.Client, grafana *v1beta1.Gra
 		timeout = 10
 	}
 
-	credentialSecret := model.GetGrafanaAdminSecret(grafana, nil)
-	selector := client.ObjectKey{
-		Namespace: credentialSecret.Namespace,
-		Name:      credentialSecret.Name,
-	}
-
-	err := c.Get(ctx, selector, credentialSecret)
+	credentials, err := getAdminCredentials(ctx, c, grafana)
 	if err != nil {
 		return nil, err
 	}
 
-	username := ""
-	password := ""
-	if val, ok := credentialSecret.Data[config.GrafanaAdminUserEnvVar]; ok {
-		username = string(val)
-	} else {
-		return nil, errors.New("grafana admin secret does not contain username")
-	}
-
-	if val, ok := credentialSecret.Data[config.GrafanaAdminPasswordEnvVar]; ok {
-		password = string(val)
-	} else {
-		return nil, errors.New("grafana admin secret does not contain password")
-	}
-
-	userinfo := url.UserPassword(username, password)
+	userinfo := url.UserPassword(credentials.username, credentials.password)
 
 	clientConfig := grapi.Config{
 		APIKey:      "",
 		BasicAuth:   userinfo,
 		HTTPHeaders: nil,
 		Client: &http.Client{
-			Transport: newInstrumentedRoundTripper(grafana.Name),
+			Transport: NewInstrumentedRoundTripper(grafana.Name, metrics.GrafanaApiRequests),
 			Timeout:   time.Second * timeout,
 		},
 		// TODO populate me
