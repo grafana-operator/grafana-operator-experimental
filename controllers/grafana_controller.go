@@ -81,6 +81,14 @@ func (r *GrafanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	nextStatus := grafana.Status.DeepCopy()
 	vars := &grafanav1beta1.OperatorReconcileVars{}
 
+	if grafana.Spec.External != nil {
+		// TODO do we want to add a api request to the external health endpoint?, A bit painful to mix in a grafana client in the controller
+		grafana.Status.Stage = grafanav1beta1.OperatorStageComplete
+		grafana.Status.StageStatus = grafanav1beta1.OperatorStageResultSuccess
+		grafana.Status.AdminUrl = grafana.Spec.External.URL
+		return r.updateStatus(grafana, nextStatus)
+	}
+
 	for _, stage := range stages {
 		controllerLog.Info("running stage", "stage", stage)
 

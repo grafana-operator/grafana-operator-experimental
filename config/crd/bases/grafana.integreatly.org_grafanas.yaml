@@ -3219,6 +3219,26 @@ spec:
                         type: object
                     type: object
                 type: object
+              external:
+                properties:
+                  apiKey:
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        type: string
+                      optional:
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  url:
+                    type: string
+                required:
+                - apiKey
+                - url
+                type: object
               grafanaContainer:
                 properties:
                   baseImage:
