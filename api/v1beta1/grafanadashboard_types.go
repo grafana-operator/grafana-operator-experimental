@@ -19,8 +19,8 @@ package v1beta1
 import (
 	"crypto/sha256"
 	"fmt"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
 
 type DashboardSourceType string
@@ -28,6 +28,7 @@ type DashboardSourceType string
 const (
 	DashboardSourceTypeRawJson DashboardSourceType = "json"
 	DashboardSourceTypeUrl     DashboardSourceType = "url"
+	DefaultResyncPeriod                            = "24h"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -49,6 +50,10 @@ type GrafanaDashboardSpec struct {
 	// plugins
 	// +optional
 	Plugins PluginList `json:"plugins,omitempty"`
+
+	// how often the dashboard is refreshed, defaults to 24h if not set
+	// +optional
+	ResyncPeriod string `json:"resyncPeriod,omitempty"`
 }
 
 // GrafanaDashboardStatus defines the observed state of GrafanaDashboard
@@ -85,6 +90,21 @@ func (in *GrafanaDashboard) Hash() string {
 
 func (in *GrafanaDashboard) Unchanged() bool {
 	return in.Hash() == in.Status.Hash
+}
+
+func (in *GrafanaDashboard) GetResyncPeriod() time.Duration {
+	if in.Spec.ResyncPeriod == "" {
+		in.Spec.ResyncPeriod = DefaultResyncPeriod
+		return in.GetResyncPeriod()
+	}
+
+	duration, err := time.ParseDuration(in.Spec.ResyncPeriod)
+	if err != nil {
+		in.Spec.ResyncPeriod = DefaultResyncPeriod
+		return in.GetResyncPeriod()
+	}
+
+	return duration
 }
 
 func (in *GrafanaDashboard) GetSourceTypes() []DashboardSourceType {
