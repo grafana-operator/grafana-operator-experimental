@@ -61,7 +61,7 @@ type OperatorReconcileVars struct {
 // GrafanaSpec defines the desired state of Grafana
 type GrafanaSpec struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Config                map[string]map[string]string `json:"config"`
+	Config                map[string]map[string]string `json:"config,omitempty"`
 	Ingress               *IngressNetworkingV1         `json:"ingress,omitempty"`
 	Route                 *RouteOpenshiftV1            `json:"route,omitempty"`
 	Service               *ServiceV1                   `json:"service,omitempty"`
@@ -76,9 +76,9 @@ type GrafanaSpec struct {
 
 type External struct {
 	URL           string                `json:"url"`
-	ApiKey        *v1.SecretKeySelector `json:"apiKey"`
-	AdminUser     *v1.SecretKeySelector `json:"adminUser"`
-	AdminPassword *v1.SecretKeySelector `json:"adminPassword"`
+	ApiKey        *v1.SecretKeySelector `json:"apiKey,omitempty"`
+	AdminUser     *v1.SecretKeySelector `json:"adminUser,omitempty"`
+	AdminPassword *v1.SecretKeySelector `json:"adminPassword,omitempty"`
 }
 
 type GrafanaContainer struct {

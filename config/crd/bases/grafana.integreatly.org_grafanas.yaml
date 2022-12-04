@@ -3260,9 +3260,6 @@ spec:
                   url:
                     type: string
                 required:
-                - adminPassword
-                - adminUser
-                - apiKey
                 - url
                 type: object
               grafanaContainer:
@@ -3742,8 +3739,6 @@ spec:
                       x-kubernetes-map-type: atomic
                     type: array
                 type: object
-            required:
-            - config
             type: object
           status:
             properties:
