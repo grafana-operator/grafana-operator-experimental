@@ -708,7 +708,7 @@ func (in *GrafanaFolderSpec) DeepCopyInto(out *GrafanaFolderSpec) {
 	*out = *in
 	if in.InstanceSelector != nil {
 		in, out := &in.InstanceSelector, &out.InstanceSelector
-		*out = new(v1.LabelSelector)
+		*out = new(metav1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
 }

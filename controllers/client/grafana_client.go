@@ -20,20 +20,10 @@ import (
 type grafanaAdminCredentials struct {
 	username string
 	password string
+	apikey   string
 }
 
 func getAdminCredentials(ctx context.Context, c client.Client, grafana *v1beta1.Grafana) (*grafanaAdminCredentials, error) {
-	deployment := model.GetGrafanaDeployment(grafana, nil)
-	selector := client.ObjectKey{
-		Namespace: deployment.Namespace,
-		Name:      deployment.Name,
-	}
-
-	err := c.Get(ctx, selector, deployment)
-	if err != nil {
-		return nil, err
-	}
-
 	credentials := &grafanaAdminCredentials{}
 	getValueFromSecret := func(ref *v1.SecretKeySelector) ([]byte, error) {
 		secret := &v1.Secret{}
@@ -56,6 +46,44 @@ func getAdminCredentials(ctx context.Context, c client.Client, grafana *v1beta1.
 		}
 
 		return nil, errors.New(fmt.Sprintf("admin credentials not found: %v/%v", grafana.Namespace, ref.Name))
+	}
+
+	if grafana.Spec.External != nil {
+		// prefer api key if present
+		if grafana.Spec.External.ApiKey != nil {
+			apikey, err := getValueFromSecret(grafana.Spec.External.ApiKey)
+			if err != nil {
+				return nil, err
+			}
+			credentials.apikey = string(apikey)
+			return credentials, nil
+		}
+
+		// rely on username and password otherwise
+		username, err := getValueFromSecret(grafana.Spec.External.AdminUser)
+		if err != nil {
+			return nil, err
+		}
+
+		password, err := getValueFromSecret(grafana.Spec.External.AdminPassword)
+		if err != nil {
+			return nil, err
+		}
+
+		credentials.username = string(username)
+		credentials.password = string(password)
+		return credentials, nil
+	}
+
+	deployment := model.GetGrafanaDeployment(grafana, nil)
+	selector := client.ObjectKey{
+		Namespace: deployment.Namespace,
+		Name:      deployment.Name,
+	}
+
+	err := c.Get(ctx, selector, deployment)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, container := range deployment.Spec.Template.Spec.Containers {
@@ -113,11 +141,7 @@ func NewGrafanaClient(ctx context.Context, c client.Client, grafana *v1beta1.Gra
 		return nil, err
 	}
 
-	userinfo := url.UserPassword(credentials.username, credentials.password)
-
 	clientConfig := grapi.Config{
-		APIKey:      "",
-		BasicAuth:   userinfo,
 		HTTPHeaders: nil,
 		Client: &http.Client{
 			Transport: NewInstrumentedRoundTripper(grafana.Name, metrics.GrafanaApiRequests),
@@ -127,6 +151,14 @@ func NewGrafanaClient(ctx context.Context, c client.Client, grafana *v1beta1.Gra
 		OrgID: 0,
 		// TODO populate me
 		NumRetries: 0,
+	}
+
+	if credentials.apikey != "" {
+		clientConfig.APIKey = credentials.apikey
+	}
+
+	if credentials.username != "" && credentials.password != "" {
+		clientConfig.BasicAuth = url.UserPassword(credentials.username, credentials.password)
 	}
 
 	grafanaClient, err := grapi.New(grafana.Status.AdminUrl, clientConfig)

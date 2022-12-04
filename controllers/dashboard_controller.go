@@ -202,13 +202,15 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			continue
 		}
 
-		// first reconcile the plugins
-		// append the requested dashboards to a configmap from where the
-		// grafana reconciler will pick them up
-		err = ReconcilePlugins(ctx, r.Client, r.Scheme, &grafana, dashboard.Spec.Plugins, fmt.Sprintf("%v-dashboard", dashboard.Name))
-		if err != nil {
-			controllerLog.Error(err, "error reconciling plugins", "dashboard", dashboard.Name, "grafana", grafana.Name)
-			success = false
+		if grafana.Spec.External == nil {
+			// first reconcile the plugins
+			// append the requested dashboards to a configmap from where the
+			// grafana reconciler will pick them up
+			err = ReconcilePlugins(ctx, r.Client, r.Scheme, &grafana, dashboard.Spec.Plugins, fmt.Sprintf("%v-dashboard", dashboard.Name))
+			if err != nil {
+				controllerLog.Error(err, "error reconciling plugins", "dashboard", dashboard.Name, "grafana", grafana.Name)
+				success = false
+			}
 		}
 
 		// then import the dashboard into the matching grafana instances
@@ -268,10 +270,12 @@ func (r *GrafanaDashboardReconciler) onDashboardDeleted(ctx context.Context, nam
 					r.Log.Info("folder still in use by other dashboards")
 				}
 			}
-
-			err = ReconcilePlugins(ctx, r.Client, r.Scheme, &grafana, nil, fmt.Sprintf("%v-dashboard", name))
-			if err != nil {
-				return err
+			
+			if grafana.Spec.External == nil {
+				err = ReconcilePlugins(ctx, r.Client, r.Scheme, &grafana, nil, fmt.Sprintf("%v-dashboard", name))
+				if err != nil {
+					return err
+				}
 			}
 
 			grafana.Status.Dashboards = grafana.Status.Dashboards.Remove(namespace, name)
