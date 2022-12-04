@@ -75,8 +75,10 @@ type GrafanaSpec struct {
 }
 
 type External struct {
-	URL    string                `json:"url"`
-	ApiKey *v1.SecretKeySelector `json:"apiKey"`
+	URL           string                `json:"url"`
+	ApiKey        *v1.SecretKeySelector `json:"apiKey"`
+	AdminUser     *v1.SecretKeySelector `json:"adminUser"`
+	AdminPassword *v1.SecretKeySelector `json:"adminPassword"`
 }
 
 type GrafanaContainer struct {

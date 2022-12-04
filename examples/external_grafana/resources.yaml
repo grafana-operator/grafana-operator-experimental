@@ -6,13 +6,14 @@ metadata:
   labels:
     dashboards: "external-grafana"
 spec:
-  client:
-    preferIngress: true
-  config:
-    log:
-      mode: "console"
-    auth:
-      disable_login_form: "false"
+  external:
+    url: http://helm-grafana.grafana-operator-system.svc.cluster.local
+    adminPassword:
+      name: helm-grafana
+      key: admin-password
+    adminUser:
+      name: helm-grafana
+      key: admin-user
 ---
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard

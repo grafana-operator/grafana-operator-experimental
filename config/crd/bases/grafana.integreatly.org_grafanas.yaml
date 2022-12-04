@@ -3221,6 +3221,30 @@ spec:
                 type: object
               external:
                 properties:
+                  adminPassword:
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        type: string
+                      optional:
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  adminUser:
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        type: string
+                      optional:
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
                   apiKey:
                     properties:
                       key:
@@ -3236,6 +3260,8 @@ spec:
                   url:
                     type: string
                 required:
+                - adminPassword
+                - adminUser
                 - apiKey
                 - url
                 type: object
