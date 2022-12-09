@@ -5,20 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: grafanadashboards.grafana.integreatly.org
+  name: grafanafolders.grafana.integreatly.org
 spec:
   group: grafana.integreatly.org
   names:
-    kind: GrafanaDashboard
-    listKind: GrafanaDashboardList
-    plural: grafanadashboards
-    singular: grafanadashboard
+    kind: GrafanaFolder
+    listKind: GrafanaFolderList
+    plural: grafanafolders
+    singular: grafanafolder
   scope: Namespaced
   versions:
   - name: v1beta1
     schema:
       openAPIV3Schema:
-        description: GrafanaDashboard is the Schema for the grafanadashboards API
+        description: GrafanaFolder is the Schema for the grafanafolders API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,11 +33,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: GrafanaDashboardSpec defines the desired state of GrafanaDashboard
+            description: GrafanaFolderSpec defines the desired state of GrafanaFolder
             properties:
-              contentCacheDuration:
-                description: Cache duration for dashboards fetched from URLs
-                type: string
               instanceSelector:
                 description: selects Grafanas for import
                 properties:
@@ -84,41 +81,15 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               json:
-                description: dashboard json
-                type: string
-              plugins:
-                description: plugins
-                items:
-                  properties:
-                    name:
-                      type: string
-                    version:
-                      type: string
-                  required:
-                  - name
-                  - version
-                  type: object
-                type: array
-              resyncPeriod:
-                description: how often the dashboard is refreshed, defaults to 24h
-                  if not set
-                type: string
-              url:
-                description: dashboard url
                 type: string
             type: object
           status:
-            description: GrafanaDashboardStatus defines the observed state of GrafanaDashboard
+            description: GrafanaFolderStatus defines the observed state of GrafanaFolder
             properties:
-              contentCache:
-                format: byte
-                type: string
-              contentTimestamp:
-                format: date-time
-                type: string
-              contentUrl:
-                type: string
               hash:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
                 type: string
             type: object
         type: object
