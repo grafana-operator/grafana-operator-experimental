@@ -67,7 +67,7 @@ func (r *IngressReconciler) reconcileIngress(ctx context.Context, cr *v1beta1.Gr
 		adminURL := r.getIngressAdminURL(ingress)
 
 		if len(ingress.Status.LoadBalancer.Ingress) == 0 {
-			return v1beta1.OperatorStageResultFailed, fmt.Errorf("ingress is not ready yet")
+			return v1beta1.OperatorStageResultInProgress, fmt.Errorf("ingress is not ready yet")
 		}
 
 		if adminURL == "" {
