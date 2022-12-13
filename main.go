@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"os/signal"
@@ -79,16 +80,8 @@ func main() {
 		setupLog.Info("operator restricted to namespace", "namespace", namespace)
 	}
 
-	stop := make(chan bool)
-	sigs := make(chan os.Signal)
-	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGABRT, syscall.SIGINT)
-	go func() {
-		sig := <-sigs
-		switch sig {
-		case syscall.SIGTERM, syscall.SIGABRT, syscall.SIGINT:
-			close(stop)
-		}
-	}()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGPIPE)
+	defer stop()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Namespace:              namespace,
@@ -116,7 +109,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Log:    ctrl.Log,
-	}).SetupWithManager(mgr, stop); err != nil {
+	}).SetupWithManager(mgr, ctx); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GrafanaDashboard")
 		os.Exit(1)
 	}
@@ -124,14 +117,14 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Log:    ctrl.Log,
-	}).SetupWithManager(mgr, stop); err != nil {
+	}).SetupWithManager(mgr, ctx); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GrafanaDatasource")
 		os.Exit(1)
 	}
 	if err = (&controllers.GrafanaFolderReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr, stop); err != nil {
+	}).SetupWithManager(mgr, ctx); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GrafanaFolder")
 		os.Exit(1)
 	}
@@ -151,4 +144,7 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+
+	<-ctx.Done()
+	setupLog.Info("SIGTERM request gotten, shutting down operator")
 }
