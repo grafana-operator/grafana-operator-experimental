@@ -14,6 +14,13 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+# Checks if kuttl is in your PATH
+ifneq ($(shell which kubectl-kuttl),)
+KUTTL=$(shell which kubectl-kuttl)
+else
+KUTTL=$(shell pwd)/bin/kubectl-kuttl
+endif
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash -o pipefail
@@ -250,3 +257,13 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+# e2e
+
+.PHONY: e2e
+e2e: $(KUTTL) install deploy ## Run e2e tests using kuttl.
+	$(KUTTL) test
+
+# Download kuttl locally if necessary
+$(KUTTL):
+	$(call go-get-tool,$(KUTTL),github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@v0.12.1)
