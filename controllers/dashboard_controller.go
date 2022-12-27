@@ -270,7 +270,7 @@ func (r *GrafanaDashboardReconciler) onDashboardDeleted(ctx context.Context, nam
 					r.Log.Info("folder still in use by other dashboards")
 				}
 			}
-			
+
 			if grafana.Spec.External == nil {
 				err = ReconcilePlugins(ctx, r.Client, r.Scheme, &grafana, nil, fmt.Sprintf("%v-dashboard", name))
 				if err != nil {
