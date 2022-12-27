@@ -266,6 +266,10 @@ func (r *GrafanaDatasourceReconciler) onDatasourceCreated(ctx context.Context, g
 		return nil
 	}
 
+	if grafana.Spec.External != nil && cr.Spec.Plugins != nil {
+		return fmt.Errorf("external grafana instances don't support plugins, please remove spec.plugins from your datasource cr")
+	}
+
 	grafanaClient, err := client2.NewGrafanaClient(ctx, r.Client, grafana)
 	if err != nil {
 		return err

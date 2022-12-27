@@ -300,6 +300,10 @@ func (r *GrafanaDashboardReconciler) onDashboardCreated(ctx context.Context, gra
 		return err
 	}
 
+	if grafana.Spec.External != nil && cr.Spec.Plugins != nil {
+		return fmt.Errorf("external grafana instances don't support plugins, please remove spec.plugins from your dashboard cr")
+	}
+
 	// Dashboards come from different sources, whereas Spec.Json is used to calculate hash
 	// So, we should keep the field updated to make sure changes in dashboards get noticed
 	cr.Spec.Json = string(dashboardJson)
