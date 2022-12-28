@@ -2,13 +2,13 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/grafana-operator/grafana-operator-experimental/controllers/metrics"
-	v1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/grafana-operator/grafana-operator-experimental/controllers/metrics"
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/grafana-operator/grafana-operator-experimental/api/v1beta1"
 	"github.com/grafana-operator/grafana-operator-experimental/controllers/config"
@@ -38,17 +38,17 @@ func getAdminCredentials(ctx context.Context, c client.Client, grafana *v1beta1.
 		}
 
 		if secret.Data == nil {
-			return nil, errors.New(fmt.Sprintf("empty credential secret: %v/%v", grafana.Namespace, ref.Name))
+			return nil, fmt.Errorf("empty credential secret: %v/%v", grafana.Namespace, ref.Name)
 		}
 
 		if val, ok := secret.Data[ref.Key]; ok {
 			return val, nil
 		}
 
-		return nil, errors.New(fmt.Sprintf("admin credentials not found: %v/%v", grafana.Namespace, ref.Name))
+		return nil, fmt.Errorf("admin credentials not found: %v/%v", grafana.Namespace, ref.Name)
 	}
 
-	if grafana.Spec.External != nil {
+	if grafana.IsExternal() {
 		// prefer api key if present
 		if grafana.Spec.External.ApiKey != nil {
 			apikey, err := getValueFromSecret(grafana.Spec.External.ApiKey)

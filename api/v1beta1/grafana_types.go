@@ -136,3 +136,11 @@ func init() {
 func (in *Grafana) PreferIngress() bool {
 	return in.Spec.Client != nil && in.Spec.Client.PreferIngress != nil && *in.Spec.Client.PreferIngress
 }
+
+func (in *Grafana) IsInternal() bool {
+	return in.Spec.External == nil
+}
+
+func (in *Grafana) IsExternal() bool {
+	return in.Spec.External != nil
+}

@@ -202,7 +202,7 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			continue
 		}
 
-		if grafana.Spec.External == nil {
+		if grafana.IsInternal() {
 			// first reconcile the plugins
 			// append the requested dashboards to a configmap from where the
 			// grafana reconciler will pick them up
@@ -271,7 +271,7 @@ func (r *GrafanaDashboardReconciler) onDashboardDeleted(ctx context.Context, nam
 				}
 			}
 
-			if grafana.Spec.External == nil {
+			if grafana.IsInternal() {
 				err = ReconcilePlugins(ctx, r.Client, r.Scheme, &grafana, nil, fmt.Sprintf("%v-dashboard", name))
 				if err != nil {
 					return err
@@ -294,13 +294,13 @@ func (r *GrafanaDashboardReconciler) onDashboardCreated(ctx context.Context, gra
 	if err != nil {
 		return err
 	}
-	
+
 	dashboardJson, err = r.resolveDatasources(cr, dashboardJson)
 	if err != nil {
 		return err
 	}
 
-	if grafana.Spec.External != nil && cr.Spec.Plugins != nil {
+	if grafana.IsExternal() && cr.Spec.Plugins != nil {
 		return fmt.Errorf("external grafana instances don't support plugins, please remove spec.plugins from your dashboard cr")
 	}
 
