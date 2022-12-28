@@ -106,7 +106,8 @@ func main() {
 	}
 	isOpenShift, err := autodetect.IsOpenshift()
 	if err != nil {
-		setupLog.Error(err, "unable to check platform")
+		setupLog.Error(err, "unable to detect the platform")
+		os.Exit(1)
 	}
 
 	if err = (&controllers.GrafanaReconciler{
