@@ -40,13 +40,11 @@ type GrafanaDatasourceInternal struct {
 	Editable      *bool  `json:"editable,omitempty"`
 
 	// +kubebuilder:validation:Schemaless
-	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Type=object
 	// +optional
 	JSONData json.RawMessage `json:"jsonData,omitempty"`
 
 	// +kubebuilder:validation:Schemaless
-	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Type=object
 	// +optional
 	SecureJSONData json.RawMessage `json:"secureJsonData,omitempty"`

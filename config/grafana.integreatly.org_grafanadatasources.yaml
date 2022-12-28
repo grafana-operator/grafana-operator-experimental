@@ -51,7 +51,6 @@ spec:
                     type: boolean
                   jsonData:
                     type: object
-                    x-kubernetes-preserve-unknown-fields: true
                   name:
                     type: string
                   orgId:
@@ -59,7 +58,6 @@ spec:
                     type: integer
                   secureJsonData:
                     type: object
-                    x-kubernetes-preserve-unknown-fields: true
                   type:
                     type: string
                   uid:
