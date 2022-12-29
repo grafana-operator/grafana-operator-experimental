@@ -80,6 +80,7 @@ func (r *GrafanaFolderReconciler) syncFolders(ctx context.Context) (ctrl.Result,
 	// sync folders, delete folders from grafana that do no longer have a cr
 	foldersToDelete := map[*v1beta1.Grafana][]v1beta1.NamespacedResource{}
 	for _, grafana := range grafanas.Items {
+		grafana := grafana
 		for _, folder := range grafana.Status.Folders {
 			if allFolders.Find(folder.Namespace(), folder.Name()) == nil {
 				foldersToDelete[&grafana] = append(foldersToDelete[&grafana], folder)
@@ -183,6 +184,7 @@ func (r *GrafanaFolderReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			continue
 		}
 
+		grafana := grafana
 		//if grafana.Status.AdminUrl == "" || grafana.Status.Stage != v1beta1.OperatorStageComplete || grafana.Status.StageStatus != v1beta1.OperatorStageResultSuccess {
 		if grafana.Status.Stage != v1beta1.OperatorStageComplete || grafana.Status.StageStatus != v1beta1.OperatorStageResultSuccess {
 			controllerLog.Info("grafana instance not ready", "grafana", grafana.Name)
@@ -244,6 +246,7 @@ func (r *GrafanaFolderReconciler) onFolderDeleted(ctx context.Context, namespace
 	}
 
 	for _, grafana := range list.Items {
+		grafana := grafana
 		if found, uid := grafana.Status.Folders.Find(namespace, name); found {
 			grafanaClient, err := client2.NewGrafanaClient(ctx, r.Client, &grafana)
 			if err != nil {
