@@ -99,10 +99,16 @@ spec:
                 type: array
               resyncPeriod:
                 type: string
+              secrets:
+                items:
+                  type: string
+                type: array
             type: object
           status:
             properties:
               hash:
+                type: string
+              lastMessage:
                 type: string
             type: object
         type: object

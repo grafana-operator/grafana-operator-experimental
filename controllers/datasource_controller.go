@@ -18,8 +18,8 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	v1 "k8s.io/api/core/v1"
 	"strings"
 	"time"
 
@@ -207,16 +207,19 @@ func (r *GrafanaDatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		err = r.onDatasourceCreated(ctx, &grafana, datasource)
 		if err != nil {
 			success = false
+			datasource.Status.LastMessage = err.Error()
 			controllerLog.Error(err, "error reconciling dashboard", "datasource", datasource.Name, "grafana", grafana.Name)
 		}
 	}
 
 	// if the datasource was successfully synced in all instances, wait for its re-sync period
 	if success {
-		return ctrl.Result{RequeueAfter: datasource.GetResyncPeriod()}, nil
+		datasource.Status.LastMessage = ""
+		return ctrl.Result{RequeueAfter: datasource.GetResyncPeriod()}, r.UpdateStatus(ctx, datasource)
+	} else {
+		// if there was an issue with the datasource, update the status
+		return ctrl.Result{RequeueAfter: RequeueDelay}, r.UpdateStatus(ctx, datasource)
 	}
-
-	return ctrl.Result{RequeueAfter: RequeueDelay}, nil
 }
 
 func (r *GrafanaDatasourceReconciler) onDatasourceDeleted(ctx context.Context, namespace string, name string) error {
@@ -280,9 +283,14 @@ func (r *GrafanaDatasourceReconciler) onDatasourceCreated(ctx context.Context, g
 		return err
 	}
 
+	variables, err := r.CollectVariablesFromSecrets(ctx, cr)
+	if err != nil {
+		return err
+	}
+
 	// always use the same uid for CR and datasource
 	cr.Spec.Datasource.UID = string(cr.UID)
-	datasourceBytes, err := json.Marshal(cr.Spec.Datasource)
+	datasourceBytes, err := cr.ExpandVariables(variables)
 	if err != nil {
 		return err
 	}
@@ -328,6 +336,28 @@ func (r *GrafanaDatasourceReconciler) ExistingId(client *gapi.Client, cr *v1beta
 		}
 	}
 	return nil, nil
+}
+
+func (r *GrafanaDatasourceReconciler) CollectVariablesFromSecrets(ctx context.Context, cr *v1beta1.GrafanaDatasource) (map[string][]byte, error) {
+	result := map[string][]byte{}
+	for _, secret := range cr.Spec.Secrets {
+		// secrets must be in the same namespace as the datasource
+		selector := client.ObjectKey{
+			Namespace: cr.Namespace,
+			Name:      strings.TrimSpace(secret),
+		}
+
+		s := &v1.Secret{}
+		err := r.Client.Get(ctx, selector, s)
+		if err != nil {
+			return nil, err
+		}
+
+		for key, value := range s.Data {
+			result[key] = value
+		}
+	}
+	return result, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

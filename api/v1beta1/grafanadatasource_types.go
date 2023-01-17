@@ -17,8 +17,10 @@ limitations under the License.
 package v1beta1
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -56,11 +58,16 @@ type GrafanaDatasourceInternal struct {
 type GrafanaDatasourceSpec struct {
 	Datasource *GrafanaDatasourceInternal `json:"datasource,omitempty"`
 
-	// selects Grafanas for import
+	// selects Grafana instances for import
 	InstanceSelector *metav1.LabelSelector `json:"instanceSelector,omitempty"`
 
 	// plugins
+	// +optional
 	Plugins PluginList `json:"plugins,omitempty"`
+
+	// secrets used for variable expansion
+	// +optional
+	Secrets []string `json:"secrets,omitempty"`
 
 	// how often the datasource is refreshed, defaults to 24h if not set
 	// +optional
@@ -69,7 +76,8 @@ type GrafanaDatasourceSpec struct {
 
 // GrafanaDatasourceStatus defines the observed state of GrafanaDatasource
 type GrafanaDatasourceStatus struct {
-	Hash string `json:"hash,omitempty"`
+	Hash        string `json:"hash,omitempty"`
+	LastMessage string `json:"lastMessage,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -106,6 +114,10 @@ func (in *GrafanaDatasource) Hash() string {
 		hash.Write([]byte(in.Spec.Datasource.Type))
 		hash.Write([]byte(in.Spec.Datasource.User))
 		hash.Write([]byte(in.Spec.Datasource.URL))
+
+		for _, secret := range in.Spec.Secrets {
+			hash.Write([]byte(secret))
+		}
 
 		if in.Spec.Datasource.BasicAuth != nil && *in.Spec.Datasource.BasicAuth {
 			hash.Write([]byte("_"))
@@ -144,6 +156,26 @@ func (in *GrafanaDatasource) GetResyncPeriod() time.Duration {
 
 func (in *GrafanaDatasource) Unchanged() bool {
 	return in.Hash() == in.Status.Hash
+}
+
+func (in *GrafanaDatasource) ExpandVariables(variables map[string][]byte) ([]byte, error) {
+	if in.Spec.Datasource == nil {
+		return nil, errors.New("data source is empty, can't expand variables")
+	}
+
+	raw, err := json.Marshal(in.Spec.Datasource)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, value := range variables {
+		patterns := []string{fmt.Sprintf("$%v", key), fmt.Sprintf("${%v}", key)}
+		for _, pattern := range patterns {
+			raw = bytes.ReplaceAll(raw, []byte(pattern), value)
+		}
+	}
+
+	return raw, nil
 }
 
 func (in *GrafanaDatasourceList) Find(namespace string, name string) *GrafanaDatasource {
