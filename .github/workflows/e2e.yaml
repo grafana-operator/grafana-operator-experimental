@@ -1,0 +1,56 @@
+name: KinD End-to-End
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+env:
+  NAME: grafana-operator
+  NAMESPACE: grafana-operator-system
+
+jobs:
+  end-to-end:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo and checkout submodules
+        uses: actions/checkout@v3.3.0
+      - name: Cache container layers
+        uses: actions/cache@v2.1.6
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2.1.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2.4.1
+      - name: Set up KinD
+        uses: engineerd/setup-kind@v0.5.0
+        with:
+          # https://kind.sigs.k8s.io/docs/user/ingress/
+          version: v0.11.1
+          image: kindest/node:v1.25.3
+      - name: Build and load (current arch)
+        run: |
+          docker buildx build --load -t quay.io/grafana-operator/grafana-operator:latest .
+          kind load docker-image quay.io/grafana-operator/grafana-operator:latest
+      - name: Install Kubectl
+        uses: azure/setup-kubectl@v2
+        with:
+          version: "v1.25.3"
+      - name: Run e2e
+        shell: bash
+        run: |
+           bash VERSION=latest make e2e
+      - name: Debug failure
+        if: failure()
+        run: |
+          kubectl version
+          kubectl -n $NAMESPACE get all
+          kubectl -n $NAMESPACE get grafana
+          kubectl get crd
+          POD=$(kubectl get pods -n $NAMESPACE -l control-plane=controller-manager --output=jsonpath={.items..metadata.name})
+          kubectl logs -n $NAMESPACE $POD -c manager
