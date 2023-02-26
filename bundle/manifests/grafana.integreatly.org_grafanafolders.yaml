@@ -4,14 +4,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: grafanadashboards.grafana.integreatly.org
+  name: grafanafolders.grafana.integreatly.org
 spec:
   group: grafana.integreatly.org
   names:
-    kind: GrafanaDashboard
-    listKind: GrafanaDashboardList
-    plural: grafanadashboards
-    singular: grafanadashboard
+    kind: GrafanaFolder
+    listKind: GrafanaFolderList
+    plural: grafanafolders
+    singular: grafanafolder
   scope: Namespaced
   versions:
   - name: v1beta1
@@ -28,22 +28,6 @@ spec:
             properties:
               allowCrossNamespaceImport:
                 type: boolean
-              contentCacheDuration:
-                type: string
-              datasources:
-                items:
-                  properties:
-                    datasourceName:
-                      type: string
-                    inputName:
-                      type: string
-                  required:
-                  - datasourceName
-                  - inputName
-                  type: object
-                type: array
-              folder:
-                type: string
               instanceSelector:
                 properties:
                   matchExpressions:
@@ -70,33 +54,9 @@ spec:
                 x-kubernetes-map-type: atomic
               json:
                 type: string
-              plugins:
-                items:
-                  properties:
-                    name:
-                      type: string
-                    version:
-                      type: string
-                  required:
-                  - name
-                  - version
-                  type: object
-                type: array
-              resyncPeriod:
-                type: string
-              url:
-                type: string
             type: object
           status:
             properties:
-              contentCache:
-                format: byte
-                type: string
-              contentTimestamp:
-                format: date-time
-                type: string
-              contentUrl:
-                type: string
               hash:
                 type: string
             type: object

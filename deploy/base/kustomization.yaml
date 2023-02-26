@@ -1,0 +1,6 @@
+namespace: grafana
+resources:
+  - crds.yaml
+  - namespace.yaml
+  - serviceaccount.yaml
+  - deployment.yaml

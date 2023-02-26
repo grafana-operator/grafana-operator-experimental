@@ -9,7 +9,8 @@ metadata:
           "kind": "Grafana",
           "metadata": {
             "labels": {
-              "dashboards": "grafana-a"
+              "dashboards": "grafana-a",
+              "folders": "grafana-a"
             },
             "name": "grafana-a"
           },
@@ -35,7 +36,7 @@ metadata:
           "apiVersion": "grafana.integreatly.org/v1beta1",
           "kind": "GrafanaDashboard",
           "metadata": {
-            "name": "grafanadashboard-sample-3"
+            "name": "grafanadashboard-sample"
           },
           "spec": {
             "instanceSelector": {
@@ -43,7 +44,7 @@ metadata:
                 "dashboards": "grafana-a"
               }
             },
-            "json": "{\n\n  \"id\": null,\n  \"title\": \"Simple Dashboard\",\n  \"tags\": [],\n  \"style\": \"dark\",\n  \"timezone\": \"browser\",\n  \"editable\": true,\n  \"hideControls\": false,\n  \"graphTooltip\": 1,\n  \"panels\": [],\n  \"time\": {\n    \"from\": \"now-6h\",\n    \"to\": \"now\"\n  },\n  \"timepicker\": {\n    \"time_options\": [],\n    \"refresh_intervals\": []\n  },\n  \"templating\": {\n    \"list\": []\n  },\n  \"annotations\": {\n    \"list\": []\n  },\n  \"refresh\": \"5s\",\n  \"schemaVersion\": 17,\n  \"version\": 0,\n  \"links\": []\n}\n"
+            "json": "{\n  \"id\": null,\n  \"title\": \"Simple Dashboard\",\n  \"tags\": [],\n  \"style\": \"dark\",\n  \"timezone\": \"browser\",\n  \"editable\": true,\n  \"hideControls\": false,\n  \"graphTooltip\": 1,\n  \"panels\": [],\n  \"time\": {\n    \"from\": \"now-6h\",\n    \"to\": \"now\"\n  },\n  \"timepicker\": {\n    \"time_options\": [],\n    \"refresh_intervals\": []\n  },\n  \"templating\": {\n    \"list\": []\n  },\n  \"annotations\": {\n    \"list\": []\n  },\n  \"refresh\": \"5s\",\n  \"schemaVersion\": 17,\n  \"version\": 0,\n  \"links\": []\n}\n"
           }
         },
         {
@@ -77,6 +78,21 @@ metadata:
               }
             ]
           }
+        },
+        {
+          "apiVersion": "grafana.integreatly.org/v1beta1",
+          "kind": "GrafanaFolder",
+          "metadata": {
+            "name": "grafanafolder-sample"
+          },
+          "spec": {
+            "instanceSelector": {
+              "matchLabels": {
+                "dashboards": "grafana-a"
+              }
+            },
+            "json": "{\n  \"uid\": \"nErXDvCkzz\",\n  \"title\": \"Example Folder\"\n}"
+          }
         }
       ]
     capabilities: Basic Install
@@ -98,6 +114,11 @@ spec:
       kind: GrafanaDatasource
       name: grafanadatasources.grafana.integreatly.org
       version: v1beta1
+    - description: GrafanaFolder is the Schema for the grafanafolders API
+      displayName: Grafana Folder
+      kind: GrafanaFolder
+      name: grafanafolders.grafana.integreatly.org
+      version: v1beta1
     - description: Grafana is the Schema for the grafanas API
       displayName: Grafana
       kind: Grafana
@@ -112,6 +133,44 @@ spec:
     spec:
       clusterPermissions:
       - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - persistentvolumeclaims
+          - secrets
+          - serviceaccounts
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - grafana.integreatly.org
           resources:
@@ -167,6 +226,32 @@ spec:
         - apiGroups:
           - grafana.integreatly.org
           resources:
+          - grafanafolders
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - grafana.integreatly.org
+          resources:
+          - grafanafolders/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - grafana.integreatly.org
+          resources:
+          - grafanafolders/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - grafana.integreatly.org
+          resources:
           - grafanas
           verbs:
           - create
@@ -190,6 +275,18 @@ spec:
           - get
           - patch
           - update
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - ingresses
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - route.openshift.io
           resources:

@@ -1,0 +1,19 @@
+bases:
+  - ../../base
+
+resources:
+  - rbac.yaml
+
+replacements:
+  - source:
+      kind: Deployment
+      fieldPath: metadata.namespace
+    targets:
+      - select:
+          kind: Deployment
+        fieldPaths:
+          - spec.template.spec.containers.[name=manager].args.3
+        options:
+          delimiter: '='
+          index: 1
+          create: false

@@ -26,6 +26,8 @@ spec:
             type: object
           spec:
             properties:
+              allowCrossNamespaceImport:
+                type: boolean
               datasource:
                 properties:
                   access:
@@ -96,10 +98,18 @@ spec:
                   - version
                   type: object
                 type: array
+              resyncPeriod:
+                type: string
+              secrets:
+                items:
+                  type: string
+                type: array
             type: object
           status:
             properties:
               hash:
+                type: string
+              lastMessage:
                 type: string
             type: object
         type: object
