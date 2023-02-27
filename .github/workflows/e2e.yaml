@@ -23,6 +23,10 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
+      - name: Setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "^1.19"
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2.1.0
       - name: Set up Docker Buildx
@@ -38,6 +42,9 @@ jobs:
       - name: Run e2e
         shell: bash
         run: |
+          # install kuttl
+          make kuttl
+          # Run e2e
           VERSION=latest make e2e
       - name: Debug failure
         if: failure()
