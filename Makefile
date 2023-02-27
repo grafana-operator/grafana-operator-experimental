@@ -264,5 +264,6 @@ e2e: $(KUTTL) install deploy-kuttl ## Run e2e tests using kuttl.
 	$(KUTTL) test
 
 # Download kuttl locally if necessary
-$(KUTTL):
+KUTTL = $(shell pwd)/bin/kuttl
+kuttl:
 	$(call go-get-tool,$(KUTTL),github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@v0.12.1)
