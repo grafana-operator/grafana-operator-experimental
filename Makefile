@@ -260,10 +260,21 @@ catalog-push: ## Push a catalog image.
 # e2e
 
 .PHONY: e2e
-e2e: $(KUTTL) install deploy-kuttl ## Run e2e tests using kuttl.
+e2e: kuttl install deploy-kuttl ## Run e2e tests using kuttl.
 	$(KUTTL) test
 
-# Download kuttl locally if necessary
-KUTTL = $(shell pwd)/bin/kuttl
+# Find or download gen-crd-api-reference-docs
 kuttl:
-	$(call go-get-tool,$(KUTTL),github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@v0.12.1)
+ifeq (, $(shell which kubectl-kuttl))
+	@{ \
+	set -e ;\
+	KUTTL_TMP_DIR=$$(mktemp -d) ;\
+	cd $$KUTTL_TMP_DIR ;\
+	go mod init tmp ;\
+	go install github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@v0.12.1 ;\
+	rm -rf $$KUTTL_TMP_DIR ;\
+	}
+KUTTL=$(GOBIN)/kuttl
+else
+KUTTL=$(shell which kubectl-kuttl)
+endif
