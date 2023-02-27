@@ -42,7 +42,7 @@ jobs:
       - name: Run e2e
         shell: bash
         run: |
-           bash VERSION=latest make e2e
+          VERSION=latest make e2e
       - name: Debug failure
         if: failure()
         run: |
