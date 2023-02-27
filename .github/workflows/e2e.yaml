@@ -38,7 +38,7 @@ jobs:
           docker buildx build --load -t quay.io/grafana-operator/grafana-operator:latest .
           kind load docker-image quay.io/grafana-operator/grafana-operator:latest
       - name: Install Kubectl
-        uses: azure/setup-kubectl@v2
+        uses: azure/setup-kubectl@v3.2
         with:
           version: "v1.25.3"
       - name: Run e2e
