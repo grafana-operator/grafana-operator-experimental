@@ -4,16 +4,10 @@ bases:
 resources:
   - rbac.yaml
 
-replacements:
-  - source:
+patches:
+  - path: deployment.yaml
+    target:
       kind: Deployment
-      fieldPath: metadata.namespace
-    targets:
-      - select:
-          kind: Deployment
-        fieldPaths:
-          - spec.template.spec.containers.[name=manager].args.3
-        options:
-          delimiter: '='
-          index: 1
-          create: false
+      version: v1
+      group: apps
+      name: grafana-operator-controller-manager
