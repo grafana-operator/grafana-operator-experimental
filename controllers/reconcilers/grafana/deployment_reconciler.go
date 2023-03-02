@@ -138,7 +138,7 @@ func getContainers(cr *v1beta1.Grafana, scheme *runtime.Scheme, vars *v1beta1.Op
 	var containers []v1.Container
 
 	image := fmt.Sprintf("%s:%s", config2.GrafanaImage, config2.GrafanaVersion)
-	plugins := model.GetPluginsConfigMap(cr, scheme)
+	plugins := model.GetDashboardsConfigMap(cr, scheme)
 
 	// env var to restart containers if plugins change
 	t := true
