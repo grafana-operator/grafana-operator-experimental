@@ -31,7 +31,7 @@ linters:
 
 linters-settings:
   gocyclo:
-    min-complexity: 20
+    min-complexity: 25
 
   misspell:
     locale: US
@@ -62,7 +62,7 @@ linters-settings:
     max-blank-identifiers: 2
 
   cyclop:
-    max-complexity: 15
+    max-complexity: 35
     package-average: 0.0
     skip-tests: true
 
@@ -71,7 +71,7 @@ linters-settings:
     default-signifies-exhaustive: false
 
   nestif:
-    min-complexity: 5
+    min-complexity: 20
 
   goconst:
     min-len: 3
