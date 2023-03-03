@@ -94,7 +94,7 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to create new manager")
-		os.Exit(1)
+		os.Exit(1) //nolint
 	}
 
 	restConfig := ctrl.GetConfigOrDie()
