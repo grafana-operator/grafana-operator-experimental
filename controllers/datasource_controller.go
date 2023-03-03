@@ -184,7 +184,6 @@ func (r *GrafanaDatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		grafana := grafana
 		// an admin url is required to interact with grafana
 		// the instance or route might not yet be ready
-		//if grafana.Status.AdminUrl == "" || grafana.Status.Stage != v1beta1.OperatorStageComplete || grafana.Status.StageStatus != v1beta1.OperatorStageResultSuccess {
 		if grafana.Status.Stage != v1beta1.OperatorStageComplete || grafana.Status.StageStatus != v1beta1.OperatorStageResultSuccess {
 			controllerLog.Info("grafana instance not ready", "grafana", grafana.Name)
 			success = false
@@ -295,18 +294,18 @@ func (r *GrafanaDatasourceReconciler) onDatasourceCreated(ctx context.Context, g
 		return err
 	}
 
-	if id == nil {
+	switch {
+	case id == nil:
 		_, err = grafanaClient.NewDataSourceFromRawData(datasourceBytes)
-		// already exists error?
 		if err != nil && !strings.Contains(err.Error(), "status: 409") {
 			return err
 		}
-	} else if !cr.Unchanged() {
+	case !cr.Unchanged():
 		err := grafanaClient.UpdateDataSourceFromRawData(*id, datasourceBytes)
 		if err != nil {
 			return err
 		}
-	} else {
+	default:
 		// datasource exists and is unchanged, nothing to do
 		return nil
 	}

@@ -185,7 +185,6 @@ func (r *GrafanaFolderReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 
 		grafana := grafana
-		//if grafana.Status.AdminUrl == "" || grafana.Status.Stage != v1beta1.OperatorStageComplete || grafana.Status.StageStatus != v1beta1.OperatorStageResultSuccess {
 		if grafana.Status.Stage != v1beta1.OperatorStageComplete || grafana.Status.StageStatus != v1beta1.OperatorStageResultSuccess {
 			controllerLog.Info("grafana instance not ready", "grafana", grafana.Name)
 			continue
@@ -318,10 +317,10 @@ func (r *GrafanaFolderReconciler) onFolderCreated(ctx context.Context, grafana *
 		return err
 	}
 
-	//FIXME our current version of the client doesn't return response codes, or any response for
-	//FIXME that matter, this needs an issue/feature request upstream
-	//FIXME for now, use the returned URL as an indicator that the folder was created instead
-	if folderFromClient.URL == "" && len(folderFromClient.URL) <= 0 {
+	// FIXME our current version of the client doesn't return response codes, or any response for
+	// FIXME that matter, this needs an issue/feature request upstream
+	// FIXME for now, use the returned URL as an indicator that the folder was created instead
+	if folderFromClient.URL == "" && len(folderFromClient.URL) == 0 {
 		return errors.NewBadRequest(fmt.Sprintf("something went wrong trying to create folder %s in grafana %s", cr.Name, grafana.Name))
 	}
 

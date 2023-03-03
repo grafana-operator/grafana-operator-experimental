@@ -21,10 +21,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
-
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -193,7 +192,6 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		grafana := grafana
 		// an admin url is required to interact with grafana
 		// the instance or route might not yet be ready
-		//if grafana.Status.AdminUrl == "" || grafana.Status.Stage != v1beta1.OperatorStageComplete || grafana.Status.StageStatus != v1beta1.OperatorStageResultSuccess {
 		if grafana.Status.Stage != v1beta1.OperatorStageComplete || grafana.Status.StageStatus != v1beta1.OperatorStageResultSuccess {
 			controllerLog.Info("grafana instance not ready", "grafana", grafana.Name)
 			success = false
@@ -407,8 +405,7 @@ func (r *GrafanaDashboardReconciler) UpdateStatus(ctx context.Context, cr *v1bet
 	return r.Client.Status().Update(ctx, cr)
 }
 
-func (r *GrafanaDashboardReconciler) Exists(client *grapi.Client,
-	cr *v1beta1.GrafanaDashboard) (bool, error) {
+func (r *GrafanaDashboardReconciler) Exists(client *grapi.Client, cr *v1beta1.GrafanaDashboard) (bool, error) {
 	dashboards, err := client.Dashboards()
 	if err != nil {
 		return false, err
@@ -443,7 +440,8 @@ func (r *GrafanaDashboardReconciler) GetOrCreateFolder(client *grapi.Client, cr 
 }
 
 func (r *GrafanaDashboardReconciler) GetFolderID(client *grapi.Client,
-	cr *v1beta1.GrafanaDashboard) (int64, error) {
+	cr *v1beta1.GrafanaDashboard,
+) (int64, error) {
 	folders, err := client.Folders()
 	if err != nil {
 		return 0, err
@@ -471,7 +469,7 @@ func (r *GrafanaDashboardReconciler) DeleteFolderIfEmpty(client *grapi.Client, f
 		if int64(dashboard.FolderID) == folderID {
 			return http.Response{
 				Status:     "resource is still in use",
-				StatusCode: 423, //Locked return code
+				StatusCode: 423, // Locked return code
 			}, err
 		}
 		continue

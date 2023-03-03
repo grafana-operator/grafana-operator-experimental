@@ -122,7 +122,7 @@ func (l PluginList) VersionsOf(plugin *GrafanaPlugin) int {
 	i := 0
 	for _, listedPlugin := range l {
 		if listedPlugin.Name == plugin.Name {
-			i = i + 1
+			i++
 		}
 	}
 	return i
