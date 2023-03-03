@@ -13,13 +13,13 @@ linters:
     - govet
     - gosimple
     - errorlint
+    - gofumpt
     - errcheck
     - dogsled
-    - cyclop
     - exhaustive
     - nestif
     - goconst
-    - gofmt
+    - gocritic
     - revive
     - makezero
     - nakedret
@@ -61,11 +61,6 @@ linters-settings:
   dogsled:
     max-blank-identifiers: 2
 
-  cyclop:
-    max-complexity: 35
-    package-average: 0.0
-    skip-tests: true
-
   exhaustive:
     check-generated: false
     default-signifies-exhaustive: false
@@ -76,9 +71,6 @@ linters-settings:
   goconst:
     min-len: 3
     min-occurrences: 3
-
-  gofmt:
-    simplify: true
 
   revive:
     ignore-generated-header: true
