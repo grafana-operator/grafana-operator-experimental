@@ -87,6 +87,8 @@ spec:
                 type: string
               url:
                 type: string
+            required:
+            - instanceSelector
             type: object
           status:
             properties:

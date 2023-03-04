@@ -105,6 +105,8 @@ spec:
                 items:
                   type: string
                 type: array
+            required:
+            - instanceSelector
             type: object
           status:
             properties:

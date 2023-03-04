@@ -59,7 +59,7 @@ type GrafanaDatasourceSpec struct {
 	Datasource *GrafanaDatasourceInternal `json:"datasource,omitempty"`
 
 	// selects Grafana instances for import
-	InstanceSelector *metav1.LabelSelector `json:"instanceSelector,omitempty"`
+	InstanceSelector *metav1.LabelSelector `json:"instanceSelector"`
 
 	// plugins
 	// +optional

@@ -23,8 +23,9 @@ import (
 	"fmt"
 	"io"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type DashboardSourceType string
@@ -54,7 +55,7 @@ type GrafanaDashboardSpec struct {
 	Url string `json:"url,omitempty"`
 
 	// selects Grafanas for import
-	InstanceSelector *metav1.LabelSelector `json:"instanceSelector,omitempty"`
+	InstanceSelector *metav1.LabelSelector `json:"instanceSelector"`
 
 	// folder assignment for dashboard
 	// +optional

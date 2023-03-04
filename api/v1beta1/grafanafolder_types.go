@@ -19,6 +19,7 @@ package v1beta1
 import (
 	"crypto/sha256"
 	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,7 +31,7 @@ type GrafanaFolderSpec struct {
 	Json string `json:"json,omitempty"`
 
 	// selects Grafanas for import
-	InstanceSelector *metav1.LabelSelector `json:"instanceSelector,omitempty"`
+	InstanceSelector *metav1.LabelSelector `json:"instanceSelector"`
 
 	// allow to import this resources from an operator in a different namespace
 	// +optional
