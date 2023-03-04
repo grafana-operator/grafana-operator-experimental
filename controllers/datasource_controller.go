@@ -19,9 +19,10 @@ package controllers
 import (
 	"context"
 	"fmt"
-	v1 "k8s.io/api/core/v1"
 	"strings"
 	"time"
+
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/grafana-operator/grafana-operator-experimental/controllers/metrics"
 
@@ -161,11 +162,6 @@ func (r *GrafanaDatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			return ctrl.Result{}, nil
 		}
 		controllerLog.Error(err, "error getting grafana dashboard cr")
-		return ctrl.Result{RequeueAfter: RequeueDelay}, err
-	}
-
-	if datasource.Spec.InstanceSelector == nil {
-		controllerLog.Info("no instance selector found for datasource, nothing to do", "name", datasource.Name, "namespace", datasource.Namespace)
 		return ctrl.Result{RequeueAfter: RequeueDelay}, err
 	}
 

@@ -170,12 +170,6 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{RequeueAfter: RequeueDelay}, err
 	}
 
-	// skip dashboards without an instance selector
-	if dashboard.Spec.InstanceSelector == nil {
-		controllerLog.Info("no instance selector found for dashboard, nothing to do", "name", dashboard.Name, "namespace", dashboard.Namespace)
-		return ctrl.Result{RequeueAfter: RequeueDelay}, nil
-	}
-
 	instances, err := GetMatchingInstances(ctx, r.Client, dashboard.Spec.InstanceSelector)
 	if err != nil {
 		controllerLog.Error(err, "could not find matching instance", "name", dashboard.Name)
