@@ -43,6 +43,8 @@ type GrafanaFolderStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Hash string `json:"hash,omitempty"`
+	// The folder instanceSelector can't find matching grafana instances
+	NoMatchingInstances bool `json:"NoMatchingInstances,omitempty"`
 }
 
 //+kubebuilder:object:root=true

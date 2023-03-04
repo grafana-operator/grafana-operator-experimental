@@ -146,6 +146,10 @@ spec:
           status:
             description: GrafanaDatasourceStatus defines the observed state of GrafanaDatasource
             properties:
+              NoMatchingInstances:
+                description: The datasource instanceSelector can't find matching grafana
+                  instances
+                type: boolean
               hash:
                 type: string
               lastMessage:

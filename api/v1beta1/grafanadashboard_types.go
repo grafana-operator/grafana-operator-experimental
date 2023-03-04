@@ -87,6 +87,8 @@ type GrafanaDashboardStatus struct {
 	ContentTimestamp metav1.Time `json:"contentTimestamp,omitempty"`
 	ContentUrl       string      `json:"contentUrl,omitempty"`
 	Hash             string      `json:"hash,omitempty"`
+	// The dashboard instanceSelector can't find matching grafana instances
+	NoMatchingInstances bool `json:"NoMatchingInstances,omitempty"`
 }
 
 //+kubebuilder:object:root=true

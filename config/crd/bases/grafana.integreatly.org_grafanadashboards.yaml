@@ -92,6 +92,8 @@ spec:
             type: object
           status:
             properties:
+              NoMatchingInstances:
+                type: boolean
               contentCache:
                 format: byte
                 type: string

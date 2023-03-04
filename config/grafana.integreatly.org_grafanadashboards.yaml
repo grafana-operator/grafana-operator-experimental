@@ -132,6 +132,10 @@ spec:
           status:
             description: GrafanaDashboardStatus defines the observed state of GrafanaDashboard
             properties:
+              NoMatchingInstances:
+                description: The dashboard instanceSelector can't find matching grafana
+                  instances
+                type: boolean
               contentCache:
                 format: byte
                 type: string

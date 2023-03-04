@@ -110,6 +110,8 @@ spec:
             type: object
           status:
             properties:
+              NoMatchingInstances:
+                type: boolean
               hash:
                 type: string
               lastMessage:

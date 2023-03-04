@@ -82,6 +82,8 @@ type GrafanaDatasourceSpec struct {
 type GrafanaDatasourceStatus struct {
 	Hash        string `json:"hash,omitempty"`
 	LastMessage string `json:"lastMessage,omitempty"`
+	// The datasource instanceSelector can't find matching grafana instances
+	NoMatchingInstances bool `json:"NoMatchingInstances,omitempty"`
 }
 
 //+kubebuilder:object:root=true
