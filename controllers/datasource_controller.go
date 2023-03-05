@@ -164,15 +164,9 @@ func (r *GrafanaDatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		controllerLog.Error(err, "error getting grafana dashboard cr")
 		return ctrl.Result{RequeueAfter: RequeueDelay}, err
 	}
-
-	instances, err := GetMatchingInstances(ctx, r.Client, datasource.Spec.InstanceSelector)
-	if err != nil || len(instances.Items) == 0 {
-		controllerLog.Error(err, "could not find matching instance", "name", datasource.Name)
-		datasource.Status.NoMatchingInstances = true
-		err = r.Client.Status().Update(ctx, datasource)
-		if err != nil {
-			controllerLog.Error(err, "unable to update status", "name", datasource.Name)
-		}
+	instances, err := r.GetMatchingDatasourceInstances(ctx, datasource, r.Client)
+	if err != nil {
+		controllerLog.Error(err, "could not find matching instances", "name", datasource.Name)
 		return ctrl.Result{RequeueAfter: RequeueDelay}, err
 	}
 
@@ -324,7 +318,6 @@ func (r *GrafanaDatasourceReconciler) onDatasourceCreated(ctx context.Context, g
 
 func (r *GrafanaDatasourceReconciler) UpdateStatus(ctx context.Context, cr *v1beta1.GrafanaDatasource) error {
 	cr.Status.Hash = cr.Hash()
-	cr.Status.NoMatchingInstances = true
 	return r.Client.Status().Update(ctx, cr)
 }
 
@@ -398,4 +391,23 @@ func (r *GrafanaDatasourceReconciler) SetupWithManager(mgr ctrl.Manager, ctx con
 	}
 
 	return err
+}
+
+func (r *GrafanaDatasourceReconciler) GetMatchingDatasourceInstances(ctx context.Context, datasource *v1beta1.GrafanaDatasource, k8sClient client.Client) (v1beta1.GrafanaList, error) {
+	instances, err := GetMatchingInstances(ctx, k8sClient, datasource.Spec.InstanceSelector)
+	if err != nil || len(instances.Items) == 0 {
+		datasource.Status.NoMatchingInstances = true
+		err = r.Client.Status().Update(ctx, datasource)
+		if err != nil {
+			return v1beta1.GrafanaList{}, err
+		}
+		return v1beta1.GrafanaList{}, err
+	}
+	datasource.Status.NoMatchingInstances = false
+	err = r.Client.Status().Update(ctx, datasource)
+	if err != nil {
+		return v1beta1.GrafanaList{}, err
+	}
+
+	return instances, err
 }

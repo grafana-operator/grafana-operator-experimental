@@ -170,14 +170,9 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{RequeueAfter: RequeueDelay}, err
 	}
 
-	instances, err := GetMatchingInstances(ctx, r.Client, dashboard.Spec.InstanceSelector)
-	if err != nil || len(instances.Items) == 0 {
-		controllerLog.Error(err, "could not find matching instance", "name", dashboard.Name)
-		dashboard.Status.NoMatchingInstances = true
-		err = r.Client.Status().Update(ctx, dashboard)
-		if err != nil {
-			controllerLog.Error(err, "unable to update status", "name", dashboard.Name)
-		}
+	instances, err := r.GetMatchingDashboardInstances(ctx, dashboard, r.Client)
+	if err != nil {
+		controllerLog.Error(err, "could not find matching instances", "name", dashboard.Name)
 		return ctrl.Result{RequeueAfter: RequeueDelay}, err
 	}
 
@@ -402,7 +397,6 @@ func (r *GrafanaDashboardReconciler) fetchDashboardJson(dashboard *v1beta1.Grafa
 
 func (r *GrafanaDashboardReconciler) UpdateStatus(ctx context.Context, cr *v1beta1.GrafanaDashboard) error {
 	cr.Status.Hash = cr.Hash()
-	cr.Status.NoMatchingInstances = false
 	return r.Client.Status().Update(ctx, cr)
 }
 
@@ -525,4 +519,23 @@ func (r *GrafanaDashboardReconciler) SetupWithManager(mgr ctrl.Manager, ctx cont
 	}
 
 	return err
+}
+
+func (r *GrafanaDashboardReconciler) GetMatchingDashboardInstances(ctx context.Context, dashboard *v1beta1.GrafanaDashboard, k8sClient client.Client) (v1beta1.GrafanaList, error) {
+	instances, err := GetMatchingInstances(ctx, k8sClient, dashboard.Spec.InstanceSelector)
+	if err != nil || len(instances.Items) == 0 {
+		dashboard.Status.NoMatchingInstances = true
+		err = r.Client.Status().Update(ctx, dashboard)
+		if err != nil {
+			return v1beta1.GrafanaList{}, err
+		}
+		return v1beta1.GrafanaList{}, err
+	}
+	dashboard.Status.NoMatchingInstances = false
+	err = r.Client.Status().Update(ctx, dashboard)
+	if err != nil {
+		return v1beta1.GrafanaList{}, err
+	}
+
+	return instances, err
 }

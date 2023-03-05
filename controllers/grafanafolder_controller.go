@@ -169,14 +169,9 @@ func (r *GrafanaFolderReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{RequeueAfter: RequeueDelay}, err
 	}
 
-	instances, err := GetMatchingInstances(ctx, r.Client, folder.Spec.InstanceSelector)
-	if err != nil || len(instances.Items) == 0 {
+	instances, err := r.GetMatchingFolderInstances(ctx, folder, r.Client)
+	if err != nil {
 		controllerLog.Error(err, "could not find matching instances", "name", folder.Name)
-		folder.Status.NoMatchingInstances = true
-		err = r.Client.Status().Update(ctx, folder)
-		if err != nil {
-			controllerLog.Error(err, "unable to update status", "name", folder.Name)
-		}
 		return ctrl.Result{RequeueAfter: RequeueDelay}, err
 	}
 
@@ -338,7 +333,6 @@ func (r *GrafanaFolderReconciler) onFolderCreated(ctx context.Context, grafana *
 
 func (r *GrafanaFolderReconciler) UpdateStatus(ctx context.Context, cr *v1beta1.GrafanaFolder) error {
 	cr.Status.Hash = cr.Hash()
-	cr.Status.NoMatchingInstances = false
 	return r.Client.Status().Update(ctx, cr)
 }
 
@@ -353,4 +347,23 @@ func (r *GrafanaFolderReconciler) Exists(client *grapi.Client, cr *v1beta1.Grafa
 		}
 	}
 	return false, nil
+}
+
+func (r *GrafanaFolderReconciler) GetMatchingFolderInstances(ctx context.Context, folder *v1beta1.GrafanaFolder, k8sClient client.Client) (v1beta1.GrafanaList, error) {
+	instances, err := GetMatchingInstances(ctx, k8sClient, folder.Spec.InstanceSelector)
+	if err != nil || len(instances.Items) == 0 {
+		folder.Status.NoMatchingInstances = true
+		err = r.Client.Status().Update(ctx, folder)
+		if err != nil {
+			return v1beta1.GrafanaList{}, err
+		}
+		return v1beta1.GrafanaList{}, err
+	}
+	folder.Status.NoMatchingInstances = false
+	err = r.Client.Status().Update(ctx, folder)
+	if err != nil {
+		return v1beta1.GrafanaList{}, err
+	}
+
+	return instances, err
 }
