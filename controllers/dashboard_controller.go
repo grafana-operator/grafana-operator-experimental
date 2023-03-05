@@ -171,24 +171,13 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	instances, err := GetMatchingInstances(ctx, r.Client, dashboard.Spec.InstanceSelector)
-	if err != nil {
+	if err != nil || len(instances.Items) == 0 {
 		controllerLog.Error(err, "could not find matching instance", "name", dashboard.Name)
 		dashboard.Status.NoMatchingInstances = true
 		err = r.Client.Status().Update(ctx, dashboard)
 		if err != nil {
 			controllerLog.Error(err, "unable to update status", "name", dashboard.Name)
 		}
-		return ctrl.Result{RequeueAfter: RequeueDelay}, err
-	}
-
-	if len(instances.Items) == 0 {
-		controllerLog.Info("no matching instances found for dashboard", "dashboard", dashboard.Name, "namespace", dashboard.Namespace)
-		dashboard.Status.NoMatchingInstances = true
-		err = r.Client.Status().Update(ctx, dashboard)
-		if err != nil {
-			controllerLog.Error(err, "unable to update status", "name", dashboard.Name)
-		}
-		// TODO when a label selector has been updated to no longer match any Grafana instances, should we delete the dashboard from those instances?
 		return ctrl.Result{RequeueAfter: RequeueDelay}, err
 	}
 

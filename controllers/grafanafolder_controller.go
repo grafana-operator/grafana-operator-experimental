@@ -170,18 +170,8 @@ func (r *GrafanaFolderReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	instances, err := GetMatchingInstances(ctx, r.Client, folder.Spec.InstanceSelector)
-	if err != nil {
+	if err != nil || len(instances.Items) == 0 {
 		controllerLog.Error(err, "could not find matching instances", "name", folder.Name)
-		folder.Status.NoMatchingInstances = true
-		err = r.Client.Status().Update(ctx, folder)
-		if err != nil {
-			controllerLog.Error(err, "unable to update status", "name", folder.Name)
-		}
-		return ctrl.Result{RequeueAfter: RequeueDelay}, err
-	}
-
-	if len(instances.Items) == 0 {
-		controllerLog.Info("no matching instances found for folder")
 		folder.Status.NoMatchingInstances = true
 		err = r.Client.Status().Update(ctx, folder)
 		if err != nil {

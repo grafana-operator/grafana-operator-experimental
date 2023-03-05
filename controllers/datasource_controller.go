@@ -166,18 +166,8 @@ func (r *GrafanaDatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	instances, err := GetMatchingInstances(ctx, r.Client, datasource.Spec.InstanceSelector)
-	if err != nil {
+	if err != nil || len(instances.Items) == 0 {
 		controllerLog.Error(err, "could not find matching instance", "name", datasource.Name)
-		datasource.Status.NoMatchingInstances = true
-		err = r.Client.Status().Update(ctx, datasource)
-		if err != nil {
-			controllerLog.Error(err, "unable to update status", "name", datasource.Name)
-		}
-		return ctrl.Result{RequeueAfter: RequeueDelay}, err
-	}
-
-	if len(instances.Items) == 0 {
-		controllerLog.Info("no matching instances found for datasource", "datasource", datasource.Name, "namespace", datasource.Namespace)
 		datasource.Status.NoMatchingInstances = true
 		err = r.Client.Status().Update(ctx, datasource)
 		if err != nil {
