@@ -48,6 +48,10 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
+const (
+	containerNamespaceDirectory = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+)
+
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
@@ -57,14 +61,30 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
+func tryGetNamespace() (string, error) {
+	if _, err := os.Stat(containerNamespaceDirectory); os.IsNotExist(err) {
+
+		return "", nil
+	} else if err != nil {
+		return "", err
+	}
+
+	bytes, err := os.ReadFile(containerNamespaceDirectory)
+	if err != nil {
+		return "", err
+	}
+
+	return string(bytes), nil
+}
+
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
-	var namespace string
+	var namespace bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.StringVar(&namespace, "namespace", "", "The namespace to restrict the operator to.")
+	flag.BoolVar(&namespace, "namespace", false, "Run in namespaced mode. If set, the Operator is scoped to its own namespace.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -76,15 +96,24 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	if namespace != "" {
-		setupLog.Info("operator restricted to namespace", "namespace", namespace)
+	operatorNamespace, err := tryGetNamespace()
+	if err != nil {
+		setupLog.Error(err, "error determining operator namespace.")
+		os.Exit(1)
+	}
+
+	if namespace {
+		setupLog.Info("operator restricted to namespace", "namespace", operatorNamespace)
+	} else {
+		setupLog.Info("operator running in cluster scoped mode")
+		operatorNamespace = ""
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGPIPE)
 	defer stop()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Namespace:              namespace,
+		Namespace:              operatorNamespace,
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
