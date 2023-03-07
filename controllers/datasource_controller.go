@@ -397,15 +397,13 @@ func (r *GrafanaDatasourceReconciler) GetMatchingDatasourceInstances(ctx context
 	instances, err := GetMatchingInstances(ctx, k8sClient, datasource.Spec.InstanceSelector)
 	if err != nil || len(instances.Items) == 0 {
 		datasource.Status.NoMatchingInstances = true
-		err = r.Client.Status().Update(ctx, datasource)
-		if err != nil {
+		if err := r.Client.Status().Update(ctx, datasource); err != nil {
 			r.Log.Info("unable to update the status of %v, in %v", datasource.Name, datasource.Namespace)
 		}
 		return v1beta1.GrafanaList{}, err
 	}
 	datasource.Status.NoMatchingInstances = false
-	err = r.Client.Status().Update(ctx, datasource)
-	if err != nil {
+	if err := r.Client.Status().Update(ctx, datasource); err != nil {
 		r.Log.Info("unable to update the status of %v, in %v", datasource.Name, datasource.Namespace)
 	}
 

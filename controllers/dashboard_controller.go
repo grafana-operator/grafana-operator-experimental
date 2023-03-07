@@ -525,15 +525,13 @@ func (r *GrafanaDashboardReconciler) GetMatchingDashboardInstances(ctx context.C
 	instances, err := GetMatchingInstances(ctx, k8sClient, dashboard.Spec.InstanceSelector)
 	if err != nil || len(instances.Items) == 0 {
 		dashboard.Status.NoMatchingInstances = true
-		err = r.Client.Status().Update(ctx, dashboard)
-		if err != nil {
+		if err := r.Client.Status().Update(ctx, dashboard); err != nil {
 			r.Log.Info("unable to update the status of %v, in %v", dashboard.Name, dashboard.Namespace)
 		}
 		return v1beta1.GrafanaList{}, err
 	}
 	dashboard.Status.NoMatchingInstances = false
-	err = r.Client.Status().Update(ctx, dashboard)
-	if err != nil {
+	if err := r.Client.Status().Update(ctx, dashboard); err != nil {
 		r.Log.Info("unable to update the status of %v, in %v", dashboard.Name, dashboard.Namespace)
 	}
 
