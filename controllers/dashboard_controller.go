@@ -172,7 +172,7 @@ func (r *GrafanaDashboardReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	instances, err := r.GetMatchingDashboardInstances(ctx, dashboard, r.Client)
 	if err != nil {
-		controllerLog.Error(err, "could not find matching instances", "name", dashboard.Name)
+		controllerLog.Error(err, "could not find matching instances", "name", dashboard.Name, "namespace", dashboard.Namespace)
 		return ctrl.Result{RequeueAfter: RequeueDelay}, err
 	}
 
@@ -527,14 +527,14 @@ func (r *GrafanaDashboardReconciler) GetMatchingDashboardInstances(ctx context.C
 		dashboard.Status.NoMatchingInstances = true
 		err = r.Client.Status().Update(ctx, dashboard)
 		if err != nil {
-			return v1beta1.GrafanaList{}, err
+			r.Log.Info("unable to update the status of %v, in %v", dashboard.Name, dashboard.Namespace)
 		}
 		return v1beta1.GrafanaList{}, err
 	}
 	dashboard.Status.NoMatchingInstances = false
 	err = r.Client.Status().Update(ctx, dashboard)
 	if err != nil {
-		return v1beta1.GrafanaList{}, err
+		r.Log.Info("unable to update the status of %v, in %v", dashboard.Name, dashboard.Namespace)
 	}
 
 	return instances, err
