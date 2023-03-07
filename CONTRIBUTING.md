@@ -6,7 +6,7 @@ Thank you for investing your time in contributing to our project.
 
 The operator uses unit tests and [Kuttl](https://kuttl.dev/) for e2e tests to make sure that the operator is working as intended, we use make to generate a number of docs and scripts for us.
 
-### Local development
+### Local development using make run
 
 Some of us use kind some use crc, below you can find an example on how to integrate with a kind cluster.
 When adding a grafanadashboard to our grafana instances through the operator and using `make test` to run the operator we need a way to send data in to the grafana instance.
@@ -42,6 +42,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 ```
 
 Get your kind IP.
+In this example lets assume that you are using test.io as your ingress endpoint.
 
 ```shell
 KIND_IP=$(docker container inspect kind-control-plane \
@@ -64,6 +65,29 @@ metadata:
 spec:
   client:
     preferIngress: true
+spec:
+  config:
+    log:
+      mode: "console"
+    auth:
+      disable_login_form: "false"
+    security:
+      admin_user: root
+      admin_password: secret
+  ingress:
+    spec:
+      ingressClassName: nginx
+      rules:
+        - host: test.io
+          http:
+            paths:
+              - backend:
+                  service:
+                    name: grafana-service
+                    port:
+                      number: 3000
+                path: /
+                pathType: Prefix
 ```
 
 This makes the grafana client in the operator to use the ingress address instead of the service name.
