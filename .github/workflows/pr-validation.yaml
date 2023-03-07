@@ -6,14 +6,15 @@ name: PR Validation
 on: pull_request
 
 jobs:
-  tests:
-    name: file-checks
+  file-checks:
     runs-on: ubuntu-latest
     steps:
       - name: Clone the code
         uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b #v3.2.0
+
       - name: trailing space
         uses: chainguard-dev/actions/trailing-space@main
+
       - name: eof-check
         uses: chainguard-dev/actions/eof-newline@main
 
@@ -22,10 +23,14 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b #v3.2.0
+        with:
+          submodules: recursive
+
       - name: Setup go
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3.4.0
         with:
@@ -36,14 +41,18 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b #v3.2.0
+        with:
+          submodules: recursive
+
       - name: Setup go
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
+
       - name: Run test
-        shell: bash
         run: |
           make test
+
       - name: Check if working tree is dirty
         run: |
           if [[ $(git status --porcelain) ]]; then
