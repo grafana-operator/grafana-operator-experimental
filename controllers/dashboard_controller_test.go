@@ -24,8 +24,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var (
-	dashboardList = v1beta1.GrafanaDashboardList{
+func TestGetDashboardsToDelete(t *testing.T) {
+	dashboardList := v1beta1.GrafanaDashboardList{
 		TypeMeta: metav1.TypeMeta{},
 		ListMeta: metav1.ListMeta{},
 		Items: []v1beta1.GrafanaDashboard{
@@ -59,7 +59,7 @@ var (
 			},
 		},
 	}
-	grafanaList = []v1beta1.Grafana{
+	grafanaList := []v1beta1.Grafana{
 		{
 			TypeMeta: metav1.TypeMeta{},
 			ObjectMeta: metav1.ObjectMeta{
@@ -106,16 +106,14 @@ var (
 			},
 		},
 	}
-)
 
-func TestGetDashboardsToDelete(t *testing.T) {
 	dashboardsToDelete := getDashboardsToDelete(&dashboardList, grafanaList)
-	for tt := range dashboardsToDelete {
-		if tt.Name == "internal-broken1" {
-			assert.Equal(t, dashboardsToDelete[tt], []v1beta1.NamespacedResource([]v1beta1.NamespacedResource{"grafana-operator-system/broken1/cb1688d2-547a-465b-bc49-df3ccf3da883"}))
+	for dashboard := range dashboardsToDelete {
+		if dashboard.Name == "internal-broken1" {
+			assert.Equal(t, []v1beta1.NamespacedResource([]v1beta1.NamespacedResource{"grafana-operator-system/broken1/cb1688d2-547a-465b-bc49-df3ccf3da883"}), dashboardsToDelete[dashboard])
 		}
-		if tt.Name == "internal-broken2" {
-			assert.Equal(t, dashboardsToDelete[tt], []v1beta1.NamespacedResource([]v1beta1.NamespacedResource{"grafana-operator-system/broken2/cb1688d2-547a-465b-bc49-df3ccf3da883"}))
+		if dashboard.Name == "internal-broken2" {
+			assert.Equal(t, []v1beta1.NamespacedResource([]v1beta1.NamespacedResource{"grafana-operator-system/broken2/cb1688d2-547a-465b-bc49-df3ccf3da883"}), dashboardsToDelete[dashboard])
 		}
 	}
 }
