@@ -268,10 +268,7 @@ kuttl:
 ifeq (, $(shell which kubectl-kuttl))
 	@{ \
 	set -e ;\
-	KUTTL_TMP_DIR=$$(mktemp -d) ;\
-	cd $$KUTTL_TMP_DIR ;\
 	go install github.com/kudobuilder/kuttl/cmd/kubectl-kuttl@v0.12.1 ;\
-	rm -rf $$KUTTL_TMP_DIR ;\
 	}
 KUTTL=$(GOBIN)/kuttl
 else
@@ -282,10 +279,7 @@ golangci:
 ifeq (, $(shell which golangci-lint))
 	@{ \
 	set -e ;\
-	LINT_TMP_DIR=$$(mktemp -d) ;\
-	cd $$LINT_TMP_DIR ;\
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2 ;\
-	rm -rf $$LINT_TMP_DIR ;\
 	}
 GOLANGCI=$(GOBIN)/golangci-lint
 else
