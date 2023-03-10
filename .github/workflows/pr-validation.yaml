@@ -82,6 +82,6 @@ jobs:
         run: |
           if [[ $(git status --porcelain) ]]; then
             git diff
-            echo 'run make test and commit changes'
+            echo 'run make helm/docs and commit changes'
             exit 1
           fi
