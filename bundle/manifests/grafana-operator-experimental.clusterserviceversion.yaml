@@ -44,7 +44,7 @@ metadata:
                 "dashboards": "grafana-a"
               }
             },
-            "json": "{\n  \"id\": null,\n  \"title\": \"Simple Dashboard\",\n  \"tags\": [],\n  \"style\": \"dark\",\n  \"timezone\": \"browser\",\n  \"editable\": true,\n  \"hideControls\": false,\n  \"graphTooltip\": 1,\n  \"panels\": [],\n  \"time\": {\n    \"from\": \"now-6h\",\n    \"to\": \"now\"\n  },\n  \"timepicker\": {\n    \"time_options\": [],\n    \"refresh_intervals\": []\n  },\n  \"templating\": {\n    \"list\": []\n  },\n  \"annotations\": {\n    \"list\": []\n  },\n  \"refresh\": \"5s\",\n  \"schemaVersion\": 17,\n  \"version\": 0,\n  \"links\": []\n}\n"
+            "json": "{\n\n  \"id\": null,\n  \"title\": \"Simple Dashboard\",\n  \"tags\": [],\n  \"style\": \"dark\",\n  \"timezone\": \"browser\",\n  \"editable\": true,\n  \"hideControls\": false,\n  \"graphTooltip\": 1,\n  \"panels\": [],\n  \"time\": {\n    \"from\": \"now-6h\",\n    \"to\": \"now\"\n  },\n  \"timepicker\": {\n    \"time_options\": [],\n    \"refresh_intervals\": []\n  },\n  \"templating\": {\n    \"list\": []\n  },\n  \"annotations\": {\n    \"list\": []\n  },\n  \"refresh\": \"5s\",\n  \"schemaVersion\": 17,\n  \"version\": 0,\n  \"links\": []\n}\n"
           }
         },
         {
@@ -91,7 +91,7 @@ metadata:
                 "dashboards": "grafana-a"
               }
             },
-            "json": "{\n  \"uid\": \"nErXDvCkzz\",\n  \"title\": \"Example Folder\"\n}"
+            "json": "{\n\n  \"uid\": \"nErXDvCkzz\",\n  \"title\": \"Example Folder\"\n}"
           }
         }
       ]
@@ -328,22 +328,13 @@ spec:
             spec:
               containers:
               - args:
-                - --secure-listen-address=0.0.0.0:8443
-                - --upstream=http://127.0.0.1:8080/
-                - --logtostderr=true
-                - --v=10
-                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
-                name: kube-rbac-proxy
-                ports:
-                - containerPort: 8443
-                  name: https
-                  protocol: TCP
-                resources: {}
-              - args:
-                - --health-probe-bind-address=:8081
-                - --metrics-bind-address=127.0.0.1:8080
                 - --leader-elect
                 image: controller:latest
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -407,11 +398,11 @@ spec:
         serviceAccountName: grafana-operator-controller-manager
     strategy: deployment
   installModes:
-  - supported: false
+  - supported: true
     type: OwnNamespace
-  - supported: false
+  - supported: true
     type: SingleNamespace
-  - supported: false
+  - supported: true
     type: MultiNamespace
   - supported: true
     type: AllNamespaces
