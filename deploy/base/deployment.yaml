@@ -36,7 +36,7 @@ spec:
             - --leader-elect
           command:
             - /manager
-          image: quay.io/pb82/grafana-operator:5.0.0
+          image: quay.io/grafana-operator/grafana-operator:v5.0.0
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

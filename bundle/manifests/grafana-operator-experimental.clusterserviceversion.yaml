@@ -326,12 +326,12 @@ spec:
               containers:
               - args:
                 - --leader-elect
-                image: controller:latest
                 env:
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
+                image: quay.io/grafana-operator/grafana-operator:v5.0.0
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
