@@ -79,7 +79,6 @@ jobs:
           make helm/docs
           DIFF=$(git diff ${GITHUB_WORKSPACE}/helm/grafana-operator/README.md)
           if [ ! -z "$DIFF" ]; then
-            echo "Please use helm-docs in your clone, of your fork, of the project, and commit a updated README.md for the chart. https://github.com/kubernetes/ingress-nginx/blob/main/RELEASE.md#d-edit-the-valuesyaml-and-run-helm-docs"
+            echo "Please use helm-docs in your clone, of your fork, of the project, and commit a updated README.md for the chart.
           fi
-          cat ${GITHUB_WORKSPACE}/helm/grafana-operator/README.md
           git diff --exit-code
