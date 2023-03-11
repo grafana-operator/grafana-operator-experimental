@@ -77,8 +77,11 @@ jobs:
       - name: Run helm-docs
         run: |
           make helm/docs
-          DIFF=$(git diff ${GITHUB_WORKSPACE}/helm/grafana-operator/README.md)
-          if [ ! -z "$DIFF" ]; then
-            echo "Please use helm-docs in your clone, of your fork, of the project, and commit a updated README.md for the chart.
+
+      - name: Check if working tree is dirty
+        run: |
+          if [[ $(git status --porcelain) ]]; then
+            git diff
+            echo 'run make helm/docs and commit changes'
+            exit 1
           fi
-          git diff --exit-code
