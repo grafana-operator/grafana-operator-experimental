@@ -292,6 +292,8 @@ kubectl delete grafanadashboards grafanadashboard-sample-ingress
 kubectl delete grafana grafana-ingress
 # Uninstall grafana-operator
 helm uninstall grafana-operator . -n grafana-operator
+# Remove kind
+kind delete cluster
 ```
 
 ## Helm CRD Caveats
