@@ -176,7 +176,7 @@ Now lets use the ingress example instead, you can find the [example](../../examp
 But this time we will do some modifications to it.
 
 Same settings but updating the label and the name to show case that we can run multiple instances of grafana without any issues.
-You will need to adapt your hostname to the domain of your picking. Or you can use [nip.io](https://nip.io/) which will forward traffic to your local deployment.
+You will need to adapt your hostname to the domain of your picking. Or you can use [nip.io](https://nip.io/) which will steer traffic to your local deployment through a DNS response (e.g. `nslookup grafana.127.0.0.1.nip.io` will respond with `127.0.0.1`).
 
 ```shell
 kubectl apply -f - <<EOF
