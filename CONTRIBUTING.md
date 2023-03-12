@@ -62,19 +62,12 @@ When the kind cluster is up and running setup your ingress.
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 ```
 
-Get your kind IP.
-In this example lets assume that you are using test.io as your ingress endpoint.
-
-```shell
-KIND_IP=$(docker container inspect kind-control-plane \
-  --format '{{ .NetworkSettings.Networks.kind.IPAddress }}')
-sudo sh -c "echo $KIND_IP test.io >> /etc/hosts"
-```
-
 To get the operator to create a dashboard through the ingress object we have added a feature in the operator.
 
 Notice the `spec.client.preferIngress: true`
 This should only be used during development.
+
+In this example we are using [nip.io](https://nip.io/) which will steer traffic to your local deployment through a DNS response (e.g. `nslookup grafana.127.0.0.1.nip.io` will respond with `127.0.0.1`).
 
 ```.yaml
 apiVersion: grafana.integreatly.org/v1beta1
@@ -98,7 +91,7 @@ spec:
     spec:
       ingressClassName: nginx
       rules:
-        - host: test.io
+        - host: grafana.127.0.0.1.nip.io
           http:
             paths:
               - backend:
