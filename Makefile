@@ -231,16 +231,18 @@ else
 KO=$(shell which ko)
 endif
 
+export KO_DOCKER_REPO ?= ko.local/grafana-operator/grafana-operator
+
 # If you want to push ko to your local Docker daemon
 .PHONY: ko-build-local
 ko-build-local: ko
-	KO_DOCKER_REPO=ko.local/grafana-operator/grafana-operator $(KO) build  --sbom=none --bare
+	$(KO) build --sbom=none --bare
 
 # If you want to push ko to your kind cluster
 .PHONY: ko-build-kind
 ko-build-kind: ko
-	KO_DOCKER_REPO=kind.local $(KO) build --sbom=none
-
+	$(KO) build --sbom=none --bare
+	kind load docker-image $(KO_DOCKER_REPO)
 helm-docs:
 ifeq (, $(shell which helm-docs))
 	@{ \
