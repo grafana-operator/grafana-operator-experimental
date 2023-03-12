@@ -29,7 +29,7 @@ Depending on what you have changed these commands will update a number of differ
 
 ### KO
 
-To speed up the container build process and not being forced to maintain a Dockerfile we are using [ko](https://ko.build/).
+To speed up multi-arch image builds and avoid burden of maintaining a Dockerfile, we are using [ko](https://ko.build/).
 
 For more information on how to push the container image to your remote repository take a look at the [official docs](https://ko.build/get-started/).
 
