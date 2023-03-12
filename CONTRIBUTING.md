@@ -9,6 +9,24 @@ The operator uses unit tests and [Kuttl](https://kuttl.dev/) for e2e tests to ma
 The operator use a submodule for [grafonnet-lib](https://github.com/grafana/grafonnet-lib),
 one of the first things you have to do is to run `make submodule`.
 
+### Code standards
+
+We use a number of code standards in the project that we apply using a number of different tools.
+As a part of the CI solution these settings will be validated, but all of them can be tested using the Makefile before pushing.
+
+- [golanci-lint](https://golangci-lint.run/)
+- [gofumpt](https://github.com/mvdan/gofumpt)
+
+Before pushing any code we recommend that you run the following make commands.
+
+```shell
+make submodule
+make test
+make code/golangci-lint
+```
+
+Depending on what you have changed these commands will update a number of different files.
+
 ### Local development using make run
 
 Some of us use kind some use crc, below you can find an example on how to integrate with a kind cluster.
@@ -119,3 +137,16 @@ kubectl create ns grafana-operator-system
 # Run the Kuttl tests
 VERSION=latest make e2e
 ```
+
+### Helm
+
+We support helm as a deployment solution and it can be found under [deploy/helm](deploy/helm/grafana-operator/README.md).
+
+The grafana-operator helm chart is currently manually created.
+When CRD:s is upgraded the helm chart will also get an update.
+
+But if you generate new RBAC rules or create new deployment options for the operator you will need to add them manually.
+
+Chart.yaml `appVersion` follows the grafana-operator version but the helm chart is versioned separately.
+
+If you add update the chart don't forget to run `make helm-docs`, which will update the helm specific README file.
