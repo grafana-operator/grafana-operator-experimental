@@ -1,3 +1,5 @@
+**NOTE**: this used to be the development repository for v5.0.0. It is archived now and all the work has been merged into the [main repository](https://github.com/grafana-operator/grafana-operator).
+
 # Grafana Operator
 
 The grafana-operator is a Kubernetes operator built to help you manage your Grafana instances in and outside of Kubernetes.
