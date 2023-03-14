@@ -24,7 +24,7 @@ jobs:
         run: |
           cd deploy/helm
           yq -i '.image.repository = "${{ env.GHCR_REPO }}"' grafana-operator/values.yaml
-          HELM_CHART_VERSION=$(cat grafana-operator/Chart.yaml | yq -r '.version')
+          HELM_CHART_VERSION=$(yq -r '.version' grafana-operator/Chart.yaml)
           helm registry login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
           helm package --app-version ${{ github.ref_name }} grafana-operator
           helm push grafana-operator-$HELM_CHART_VERSION.tgz ${{ env.HELM_REPO }}
