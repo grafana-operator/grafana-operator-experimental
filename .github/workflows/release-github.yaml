@@ -24,9 +24,10 @@ jobs:
         run: |
           cd deploy/helm
           yq -i '.image.repository = "${{ env.GHCR_REPO }}"' grafana-operator/values.yaml
+          HELM_CHART_VERSION=$(yq -r '.version' grafana-operator/Chart.yaml)
           helm registry login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
-          helm package --app-version ${{ github.ref_name }} --version ${{ github.ref_name }} grafana-operator
-          helm push grafana-operator-${{ github.ref_name }}.tgz ${{ env.HELM_REPO }}
+          helm package --app-version ${{ github.ref_name }} grafana-operator
+          helm push grafana-operator-$HELM_CHART_VERSION.tgz ${{ env.HELM_REPO }}
 
   image:
     runs-on: ubuntu-latest
@@ -70,3 +71,4 @@ jobs:
             --image-label org.opencontainers.image.revision=${{ github.sha }} \
             --image-label org.opencontainers.image.version=${{ github.ref_name }} \
             --image-label org.opencontainers.image.created=${{ env.BUILD_DATE }} \
+            --insecure-registry
