@@ -1,4 +1,3 @@
-
 ---
 title: "Documentation"
 linkTitle: "Documentation"
@@ -10,6 +9,10 @@ menu:
 
 Our official documentation for the operator.
 Hopefully you will find everything you need in here, if not feel free to open an issue, write on slack or even better submit a pr.
+
+## Examples
+
+Just like in v4 we have a number of examples to look at.
 
 ## Cross namespace grafana instances
 
